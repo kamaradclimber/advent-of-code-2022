@@ -14,37 +14,41 @@ fn main() {
     let input_file = &args[3];
     println!("Solving day {day}, part {part} with input file {input_file}");
 
-    day1_part1(input_file.to_string());
+    match part {
+        1 => day1(input_file.to_string(), 1),
+        2 => day1(input_file.to_string(), 3),
+        _ => panic!("There are only 2 part during each day, you gave {part}"),
+    }
 }
 
-fn day1_part1(input_file: String) {
-    println!("Starting to solve day1 part 1");
+fn day1(input_file: String, top: u8) {
+    println!("Starting to solve day1");
 
     let contents = fs::read_to_string(&input_file).expect("Could not read input_file");
     let lines = contents.lines();
 
-    let mut richest_package = 0;
-    let mut current_package = 0;
+    let mut packages: Vec<u32> = Vec::new();
+    let mut elf_id = 0;
 
     for line in lines {
         if line.is_empty() {
-            if current_package > richest_package {
-                richest_package = current_package;
-                println!("Current package is {current_package}, richest package {richest_package}");
-            }
-            current_package = 0;
+            elf_id += 1;
         } else {
-            current_package += line
+            let current_package_value = packages.get(elf_id);
+            if current_package_value == None {
+                packages.push(0);
+            }
+            packages[elf_id] += line
                 .trim()
                 .parse::<u32>()
                 .expect("Would have expected a number but read {line}");
         }
     }
-    if current_package > richest_package {
-        richest_package = current_package;
-        println!("Current package is {current_package}, richest package {richest_package}");
-        current_package = 0;
+    packages.sort();
+    let mut response = 0;
+    for i in 0..top {
+        response += packages[packages.len() - 1 - i as usize];
     }
 
-    println!("Richest package is {richest_package}");
+    println!("Sum of {top} packages is {response}");
 }
