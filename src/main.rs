@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::env;
 use std::fs;
 
@@ -19,10 +20,57 @@ fn main() {
         (1, 2) => day1(input_file.to_string(), 3),
         (2, 1) => day2(input_file.to_string(), 1),
         (2, 2) => day2(input_file.to_string(), 2),
+        (3, 1) => day3(input_file.to_string(), 1),
+        (3, 2) => day3(input_file.to_string(), 2),
         (_, 1) => panic!("Solution for day {day} has not been implemented yet"),
         (_, 2) => panic!("Solution for day {day} has not been implemented yet"),
         (_, _) => panic!("There are only 2 parts per day"),
     }
+}
+
+struct Rucksack {
+    line: String,
+}
+
+impl Rucksack {
+    fn compartment1(&self) -> &str {
+        let half = self.line.len() / 2;
+        &self.line[..half]
+    }
+    fn compartment2(&self) -> &str {
+        let half = self.line.len() / 2;
+        &self.line[half..]
+    }
+    fn priority(&self) -> u32 {
+        let mut set = HashSet::new();
+        for char in self.compartment1().chars() {
+            set.insert(char);
+        }
+        for char in self.compartment2().chars() {
+            if set.contains(&char) {
+                let c = char as u32;
+                return match c {
+                    65..=90 => c - 65 + 27,
+                    97..=122 => c - 97 + 1,
+                    _ => panic!("Invalid character {0}", char),
+                };
+            }
+        }
+        panic!("No duplicate in {0}", self.line);
+    }
+}
+
+fn day3(input_file: String, part: u8) {
+    let contents = fs::read_to_string(&input_file).expect("Could not read input_file");
+    let lines = contents.lines();
+    let mut sum = 0;
+    for line in lines {
+        let sack = Rucksack {
+            line: line.to_string(),
+        };
+        sum += sack.priority();
+    }
+    println!("Solution is {sum}");
 }
 
 enum Play {
