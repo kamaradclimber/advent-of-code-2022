@@ -1,3 +1,4 @@
+use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs;
@@ -22,9 +23,42 @@ fn main() {
         (2, 2) => day2(input_file.to_string(), 2),
         (3, 1) => day3(input_file.to_string(), 1),
         (3, 2) => day3(input_file.to_string(), 2),
+        (4, 1) => day4(input_file.to_string(), 1),
         (_, 1) => panic!("Solution for day {day} has not been implemented yet"),
         (_, 2) => panic!("Solution for day {day} has not been implemented yet"),
         (_, _) => panic!("There are only 2 parts per day"),
+    }
+}
+
+fn includes_range(me: &std::ops::Range<&u32>, other: &std::ops::Range<&u32>) -> bool {
+    me.start <= other.start && me.end >= other.end
+}
+
+fn day4(input_file: String, part: u8) {
+    let contents = fs::read_to_string(&input_file).expect("Could not read input_file");
+    let lines = contents.lines();
+    let mut sum = 0;
+    let re = Regex::new(r"^(\d+)-(\d+),(\d+)-(\d+)$").unwrap();
+    if part == 1 {
+        for line in lines {
+            let cap = re.captures(line).unwrap();
+            let start1 = &cap[1].parse::<u32>().unwrap();
+            let end1 = &cap[2].parse::<u32>().unwrap();
+            let start2 = &cap[3].parse::<u32>().unwrap();
+            let end2 = &cap[4].parse::<u32>().unwrap();
+            let elf1 = std::ops::Range {
+                start: start1,
+                end: end1,
+            };
+            let elf2 = std::ops::Range {
+                start: start2,
+                end: end2,
+            };
+            if includes_range(&elf1, &elf2) || includes_range(&elf2, &elf1) {
+                sum += 1;
+            }
+        }
+        println!("Answer is {sum}");
     }
 }
 
