@@ -24,14 +24,27 @@ fn main() {
         (3, 1) => day3(input_file.to_string(), 1),
         (3, 2) => day3(input_file.to_string(), 2),
         (4, 1) => day4(input_file.to_string(), 1),
+        (4, 2) => day4(input_file.to_string(), 2),
         (_, 1) => panic!("Solution for day {day} has not been implemented yet"),
         (_, 2) => panic!("Solution for day {day} has not been implemented yet"),
         (_, _) => panic!("There are only 2 parts per day"),
     }
 }
 
-fn includes_range(me: &std::ops::Range<&u32>, other: &std::ops::Range<&u32>) -> bool {
-    me.start <= other.start && me.end >= other.end
+fn includes_range(
+    me: &std::ops::RangeInclusive<&u32>,
+    other: &std::ops::RangeInclusive<&u32>,
+) -> bool {
+    me.start() <= other.start() && me.end() >= other.end()
+}
+fn overlap_range(
+    me: &std::ops::RangeInclusive<&u32>,
+    other: &std::ops::RangeInclusive<&u32>,
+) -> bool {
+    other.contains(&me.start())
+        || other.contains(&me.end())
+        || me.contains(&other.start())
+        || me.contains(&other.end())
 }
 
 fn day4(input_file: String, part: u8) {
@@ -39,27 +52,22 @@ fn day4(input_file: String, part: u8) {
     let lines = contents.lines();
     let mut sum = 0;
     let re = Regex::new(r"^(\d+)-(\d+),(\d+)-(\d+)$").unwrap();
-    if part == 1 {
-        for line in lines {
-            let cap = re.captures(line).unwrap();
-            let start1 = &cap[1].parse::<u32>().unwrap();
-            let end1 = &cap[2].parse::<u32>().unwrap();
-            let start2 = &cap[3].parse::<u32>().unwrap();
-            let end2 = &cap[4].parse::<u32>().unwrap();
-            let elf1 = std::ops::Range {
-                start: start1,
-                end: end1,
-            };
-            let elf2 = std::ops::Range {
-                start: start2,
-                end: end2,
-            };
-            if includes_range(&elf1, &elf2) || includes_range(&elf2, &elf1) {
-                sum += 1;
-            }
+    for line in lines {
+        let cap = re.captures(line).unwrap();
+        let start1 = &cap[1].parse::<u32>().unwrap();
+        let end1 = &cap[2].parse::<u32>().unwrap();
+        let start2 = &cap[3].parse::<u32>().unwrap();
+        let end2 = &cap[4].parse::<u32>().unwrap();
+        let elf1 = std::ops::RangeInclusive::new(start1, end1);
+        let elf2 = std::ops::RangeInclusive::new(start2, end2);
+        if part == 1 && (includes_range(&elf1, &elf2) || includes_range(&elf2, &elf1)) {
+            sum += 1;
         }
-        println!("Answer is {sum}");
+        if part == 2 && overlap_range(&elf1, &elf2) {
+            sum += 1;
+        }
     }
+    println!("Answer is {sum}");
 }
 
 fn day3_char2priority(char: char) -> u32 {
