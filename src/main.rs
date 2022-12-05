@@ -26,6 +26,7 @@ fn main() {
         (4, 1) => day4(input_file.to_string(), 1),
         (4, 2) => day4(input_file.to_string(), 2),
         (5, 1) => day5(input_file.to_string(), 1),
+        (5, 2) => day5(input_file.to_string(), 2),
         (_, 1) => panic!("Solution for day {day} has not been implemented yet"),
         (_, 2) => panic!("Solution for day {day} has not been implemented yet"),
         (_, _) => panic!("There are only 2 parts per day"),
@@ -69,12 +70,26 @@ fn day5(input_file: String, part: u8) {
         let count = &instruction[1].parse::<u32>().unwrap();
         let src_column_id = &instruction[2].parse::<usize>().unwrap();
         let dst_column_id = &instruction[3].parse::<usize>().unwrap();
-        for _ in 0..*count {
-            match stacks[*src_column_id].pop() {
-                Some(my_crate) => {
-                    stacks[*dst_column_id].push(my_crate);
+        if part == 1 {
+            for _ in 0..*count {
+                match stacks[*src_column_id].pop() {
+                    Some(my_crate) => stacks[*dst_column_id].push(my_crate),
+                    None => panic!("Stack is empty, cannot move element from it!"),
                 }
-                None => panic!("Stack is empty, cannot move element from it!"),
+            }
+        } else {
+            let mut transient = Vec::new();
+            for _ in 0..*count {
+                match stacks[*src_column_id].pop() {
+                    Some(my_crate) => transient.push(my_crate),
+                    None => panic!("Stack is empty, cannot move element from it!"),
+                }
+            }
+            for _ in 0..*count {
+                match transient.pop() {
+                    Some(my_crate) => stacks[*dst_column_id].push(my_crate),
+                    _ => panic!("Transient stack is empty, this is really impossible"),
+                }
             }
         }
     }
