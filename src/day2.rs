@@ -72,4 +72,3 @@ pub fn solve(input_file: String, part: u8) {
     }
     println!("Score is {score}")
 }
-
