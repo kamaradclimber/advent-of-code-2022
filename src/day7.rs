@@ -64,6 +64,23 @@ pub fn solve(input_file: String, part: u8) {
             }
         }
         println!("Solution is {relevant}");
+    } else {
+        let mut sizes = vec![None; tree.len()];
+
+        let root_size = compute_size(&tree, &mut sizes, 0);
+        let free_space = 70000000 - root_size;
+        let mut relevant_to_delete = root_size;
+        let space_to_clean = 30000000 - free_space; // we should check there is indeed something to do
+        for (index, _) in tree.iter().enumerate() {
+            if matches!(tree[index], FilesystemEntry::Directory(..)) {
+                // technically we know we've already computed everything
+                let size = compute_size(&tree, &mut sizes, index);
+                if size >= space_to_clean && size < relevant_to_delete {
+                    relevant_to_delete = size;
+                }
+            }
+        }
+        println!("Solution is {relevant_to_delete}");
     }
 }
 
