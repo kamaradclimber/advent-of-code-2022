@@ -64,16 +64,12 @@ pub fn solve(input_file: String, part: u8) {
 
         println!("Visible trees for part {0}, is {1}", part, visibles.len());
     } else {
+
+        let my_forest = &forest;
+        let best_scenic_view : usize = (0..forest.len()).flat_map(|y| (0..width).map(move |x| scenic_view(x,y, my_forest)))
+            .max()
+            .expect("Forest should not be empty");
         
-        let mut best_scenic_view = 0;
-        for y in 0..forest.len() {
-            for x in 0..width {
-                best_scenic_view = std::cmp::max(
-                    best_scenic_view, 
-                    scenic_view(x,y, &forest)
-                    )
-            }
-        }
         println!("Best scenic view is {best_scenic_view}");
     }
 }
