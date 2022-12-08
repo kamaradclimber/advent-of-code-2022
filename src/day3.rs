@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 
@@ -24,58 +25,48 @@ impl Rucksack {
         &self.line[half..]
     }
     fn unique_items(&self) -> HashSet<char> {
-        let mut set = HashSet::new();
-        for char in self.line.chars() {
-            set.insert(char);
-        }
-        return set;
+        self.line.chars().collect()
     }
     fn priority(&self) -> u32 {
-        let mut set = HashSet::new();
-        for char in self.compartment1().chars() {
-            set.insert(char);
-        }
-        for char in self.compartment2().chars() {
-            if set.contains(&char) {
-                return day3_char2priority(char);
-            }
-        }
-        panic!("No duplicate in {0}", self.line);
+        let set: HashSet<char> = self.compartment1().chars().collect();
+        let my_char = self
+            .compartment2()
+            .chars()
+            .find(|c| set.contains(c))
+            .expect("No duplicate found");
+        day3_char2priority(my_char)
     }
 }
 
 pub fn solve(input_file: String, part: u8) {
     let contents = fs::read_to_string(&input_file).expect("Could not read input_file");
     let lines = contents.lines();
-    let mut sum = 0;
     if part == 1 {
-        for line in lines {
-            let sack = Rucksack {
-                line: line.to_string(),
-            };
-            sum += sack.priority();
-        }
-    } else {
-        let mut elf_id = 0;
-        let mut items = HashMap::<char, u8>::new();
-        for line in lines {
-            let sack = Rucksack {
-                line: line.to_string(),
-            };
-            for item in sack.unique_items() {
-                let count = items.entry(item).or_insert(0);
-                *count += 1;
-                if items[&item] == 3 {
-                    sum += day3_char2priority(item);
-                    break;
+        let sum: u32 = lines
+            .map(|line| {
+                Rucksack {
+                    line: line.to_string(),
                 }
-            }
-
-            elf_id += 1;
-            if elf_id % 3 == 0 {
-                items = HashMap::<char, u8>::new();
-            }
-        }
+                .priority()
+            })
+            .sum();
+        println!("Solution is {sum}");
+    } else {
+        let sum: u32 = lines
+            .map(|line| Rucksack {
+                line: line.to_string(),
+            })
+            .collect::<Vec<Rucksack>>()
+            .chunks(3)
+            .map(|sacks| {
+                let item_frequencies = sacks.iter().flat_map(Rucksack::unique_items).counts();
+                let (common_item, _) = item_frequencies
+                    .iter()
+                    .find(|(_char, count)| **count == 3)
+                    .expect("Elf group does not have a common item");
+                day3_char2priority(*common_item)
+            })
+            .sum();
+        println!("Solution is {sum}");
     }
-    println!("Solution is {sum}");
 }
