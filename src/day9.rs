@@ -10,39 +10,44 @@ pub fn solve(input_file: String, part: u8) {
         let count: usize = words[1].parse().expect("Would expect a number of move");
         vec![my_move; count]
     });
-    let mut tail_pos = Position { x: 0, y: 0 };
-    let mut head_pos = Position { x: 0, y: 0 };
+    let rope_size = if part == 1 { 2 } else { 10 };
+    let mut rope: Vec<Position> = vec![];
+    for i in 0..rope_size {
+        rope.push(Position { x: 0, y: 0 });
+    }
 
     let mut successive_tail_positions = vec![];
 
     for my_move in all_moves {
-        head_pos = head_pos + my_move;
+        rope[0] = rope[0] + my_move;
         // let's compute new tail position
-        match distance(tail_pos, head_pos) {
-            0 | 1 => (),
-            _ => {
-                // tail has to move
-                let dx = head_pos.x - tail_pos.x;
-                match dx {
-                    1 | 2 => tail_pos = tail_pos + Move::R,
-                    -1 | -2 => tail_pos = tail_pos + Move::L,
-                    0 => (),
-                    _ => panic!("Tail and Head should not be at more than 2 x apart"),
-                };
-                let dy = head_pos.y - tail_pos.y;
-                match dy {
-                    1 | 2 => tail_pos = tail_pos + Move::D,
-                    -1 | -2 => tail_pos = tail_pos + Move::U,
-                    0 => (),
-                    _ => panic!("Tail and Head should not be at more than 2 y apart"),
-                };
+        for i in 1..rope_size {
+            match distance(rope[i], rope[i - 1]) {
+                0 | 1 => (),
+                _ => {
+                    // tail has to move
+                    let dx = rope[i - 1].x - rope[i].x;
+                    match dx {
+                        1 | 2 => rope[i] = rope[i] + Move::R,
+                        -1 | -2 => rope[i] = rope[i] + Move::L,
+                        0 => (),
+                        _ => panic!("Tail and Head should not be at more than 2 x apart"),
+                    };
+                    let dy = rope[i - 1].y - rope[i].y;
+                    match dy {
+                        1 | 2 => rope[i] = rope[i] + Move::D,
+                        -1 | -2 => rope[i] = rope[i] + Move::U,
+                        0 => (),
+                        _ => panic!("Tail and Head should not be at more than 2 y apart"),
+                    };
+                }
             }
         }
-        successive_tail_positions.push(tail_pos);
+        successive_tail_positions.push(rope[rope_size - 1]);
     }
 
     let unique_positions = successive_tail_positions.iter().unique().count();
-    println!("Solution for part 1 is {unique_positions} unique position for tail");
+    println!("Solution for part {part} is {unique_positions} unique position for tail");
 }
 
 fn distance(p1: Position, p2: Position) -> u32 {
