@@ -22,11 +22,28 @@ pub fn solve(input_file: String, part: u8) {
             }
         }
     }
-    let res: i32 = snapshot_points
-        .iter()
-        .map(|&cycle| signal_strength(&register_x_values, cycle))
-        .sum();
-    println!("Sum of signal strength is {res}");
+    if part == 1 {
+        let res: i32 = snapshot_points
+            .iter()
+            .map(|&cycle| signal_strength(&register_x_values, cycle))
+            .sum();
+        println!("Sum of signal strength is {res}");
+    } else {
+        for cycle in 1..=240 {
+            let pixel_position = (cycle as i32 - 1) % 40;
+            let c = if pixel_position >= register_x_values[cycle - 1] - 1
+                && pixel_position <= register_x_values[cycle - 1] + 1
+            {
+                "#"
+            } else {
+                "."
+            };
+            print!("{c}");
+            if cycle % 40 == 0 {
+                print!("\n");
+            }
+        }
+    }
 }
 
 fn signal_strength(register_x_values: &Vec<i32>, cycle: usize) -> i32 {
