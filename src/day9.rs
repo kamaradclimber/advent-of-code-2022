@@ -12,7 +12,7 @@ pub fn solve(input_file: String, part: u8) {
     });
     let rope_size = if part == 1 { 2 } else { 10 };
     let mut rope: Vec<Position> = vec![];
-    for i in 0..rope_size {
+    for _ in 0..rope_size {
         rope.push(Position { x: 0, y: 0 });
     }
 
