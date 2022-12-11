@@ -1,7 +1,7 @@
 use std::fs;
 use regex::Regex;
 
-pub fn solve(input_file: String, _part: u8) {
+pub fn solve(input_file: String, part: u8) {
     let contents = fs::read_to_string(&input_file).expect("Could not read input_file");
     let mut monkey_holdings : Vec<Vec<Item>> = vec![];
     let mut monkeys : Vec<Monkey> = vec![];
@@ -16,14 +16,20 @@ pub fn solve(input_file: String, _part: u8) {
     }
     let mut inspected_items : Vec<u32> = vec![0; monkeys.len()];
 
-    for round in 1..=20 {
+    let round = if part == 1 { 20 } else { 10000 };
+
+    for round in 1..=round {
         for monkey in monkeys.iter() {
             let holdings = &monkey_holdings[monkey.id];
             let mut new_holdings : Vec<Vec<Item>> = vec![vec![]; monkey_holdings.len()];
             for item in holdings {
                 inspected_items[monkey.id] += 1;
                 let initial_worry_level = *item;
-                let new_item = monkey.operation.run(*item) / 3;
+                let new_item = if part ==1 {
+                    monkey.operation.run(*item) / 3
+                } else {
+                    *item
+                };
                 let dest_id = if (new_item) % monkey.test.divide_criteria == 0 {
                     monkey.test.destination_if_true
                 } else {
@@ -38,12 +44,28 @@ pub fn solve(input_file: String, _part: u8) {
                 monkey_holdings[id].append(&mut new_holdings[id]);
             }
         }
+        if round == 1 {
+            inspect_monkey_actions(round, &inspected_items);
+        }
+        if round == 20 {
+            inspect_monkey_actions(round, &inspected_items);
+        }
+        if round % 1000 == 0 {
+            inspect_monkey_actions(round, &inspected_items);
+        }
     }
     inspected_items.sort();
     let inspected_items : Vec<&u32> = inspected_items.iter().rev().collect();
     let monkey_business_level = inspected_items[0] * inspected_items[1];
     println!("Level of monkey business is {monkey_business_level}");
 
+}
+
+fn inspect_monkey_actions(round: u32, inspected_items: &Vec<u32>) {
+    println!("== After round {round} ==");
+    for (id, item_count) in inspected_items.iter().enumerate() {
+        println!("Monkey {0} inspect items {1} times.", id, item_count);
+    }
 }
 
 fn parse_item_line(line: &str) -> Vec<Item> {
