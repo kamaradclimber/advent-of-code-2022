@@ -14,11 +14,11 @@ pub fn solve(input_file: String, part: u8) {
         for (x, c) in line.chars().enumerate() {
             let height = match c {
                 'S' => {
-                    start = (x as i32, y as i32);
+                    stop = (x as i32, y as i32);
                     0
                 }
                 'E' => {
-                    stop = (x as i32, y as i32);
+                    start = (x as i32, y as i32);
                     25
                 }
                 _ => c as i32 - 'a' as i32,
@@ -38,9 +38,16 @@ pub fn solve(input_file: String, part: u8) {
         let (point, distance) = to_explore
             .pop_front()
             .expect("There is no path connecting S to E");
-        //if point == stop {
-        //    break;
-        //}
+        if point == stop {
+            break;
+        }
+        if part == 2 {
+            let (x, y) = point;
+            if maze[y as usize][x as usize] == 0 {
+                stop = (x,y);
+                break;
+            }
+        }
         if !visited.insert(point) {
             continue;
         }
@@ -69,6 +76,6 @@ fn neighbors(point: (i32, i32), maze: &Vec<Vec<i32>>) -> Vec<(i32, i32)> {
         .into_iter()
         .filter(|(xx, _)| *xx >= 0 && (*xx as usize) < maze[0].len())
         .filter(|(_, yy)| *yy >= 0 && (*yy as usize) < maze.len())
-        .filter(|(xx, yy)| maze[*yy as usize][*xx as usize] <= maze[y as usize][x as usize] + 1)
+        .filter(|(xx, yy)| maze[*yy as usize][*xx as usize] >= maze[y as usize][x as usize] - 1)
         .collect()
 }
