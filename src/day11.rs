@@ -76,7 +76,7 @@ pub fn solve(input_file: String, part: u8) {
 fn inspect_monkey_actions(
     round: u64,
     inspected_items: &Vec<u64>,
-    monkey_holdings: &Vec<Vec<Item>>,
+    _monkey_holdings: &Vec<Vec<Item>>,
 ) {
     println!("== After round {round} ==");
     for (id, item_count) in inspected_items.iter().enumerate() {

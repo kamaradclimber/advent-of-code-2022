@@ -44,7 +44,7 @@ pub fn solve(input_file: String, part: u8) {
         if part == 2 {
             let (x, y) = point;
             if maze[y as usize][x as usize] == 0 {
-                stop = (x,y);
+                stop = (x, y);
                 break;
             }
         }
