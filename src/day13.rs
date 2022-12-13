@@ -3,24 +3,45 @@ use std::fs;
 
 pub fn solve(input_file: String, part: u8) {
     let contents = fs::read_to_string(&input_file).expect("Could not read input_file");
-    let blocks = contents.split("\n\n");
+    let mut packets = vec![];
+    let lines = contents.lines();
     let mut result = 0;
-    for (index, block) in blocks.enumerate() {
-        let lines: Vec<&str> = block.lines().collect();
-        let a: Packet = lines[0].parse().expect("We must provide valid inputs");
-        let b: Packet = lines[1].parse().expect("We must provide valid inputs");
-        if a <= b {
-            println!(
-                "pair {0}  {a:?} and {b:?} are in the right order",
-                index + 1
-            );
-            result += index + 1;
+    for line in lines {
+        if line == "" {
+            continue;
         }
+        let p: Packet = line.parse().expect("We must provide valid inputs");
+        packets.push(p);
     }
-    println!("Score for part {0}, is {result}", part);
+    if part == 1 {
+        for (index, chunk) in packets.chunks(2).enumerate() {
+            let (a, b) = if let [a, b] = chunk { (a, b) } else { panic!() };
+            if a <= b {
+                println!(
+                    "pair {0}  {a:?} and {b:?} are in the right order",
+                    index + 1
+                );
+                result += index + 1;
+            }
+        }
+        println!("Solution for part {0}, is {result}", part);
+    } else {
+        let p1: Packet = "[[2]]".parse().unwrap();
+        let p1_copy = p1.clone();
+        packets.push(p1);
+        let p2: Packet = "[[6]]".parse().unwrap();
+        let p2_copy = p2.clone();
+        packets.push(p2);
+        packets.sort();
+
+        let n = packets.iter().position(|r| r == &p1_copy).unwrap() + 1;
+        let m = packets.iter().position(|r| r == &p2_copy).unwrap() + 1;
+        result = n * m;
+        println!("Solution for part {0}, is {result}", part);
+    }
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone)]
 enum Packet {
     List(Vec<Packet>),
     Integer(u32),
@@ -31,23 +52,19 @@ enum PacketParsingError {
     UnexpectedCharacter(char),
 }
 
+impl Ord for Packet {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other).expect("Ordering is total")
+    }
+}
+
 impl PartialOrd for Packet {
     fn partial_cmp(&self, other: &Packet) -> Option<Ordering> {
         match (self, other) {
             (Packet::Integer(e1), Packet::Integer(e2)) => e1.partial_cmp(e2),
             (Packet::Integer(e1), _) => Packet::List(vec![Packet::Integer(*e1)]).partial_cmp(other),
             (_, Packet::Integer(e1)) => self.partial_cmp(&Packet::List(vec![Packet::Integer(*e1)])),
-            (Packet::List(l1), Packet::List(l2)) => {
-                l1.partial_cmp(&l2)
-                //let size_order = l1.len().cmp(&l2.len());
-                //for (e1, e2) in l1.iter().zip(l2) {
-                //    if e1 == e2 {
-                //        continue;
-                //    }
-                //    return e1.partial_cmp(e2);
-                //};
-                // return Some(size_order);
-            }
+            (Packet::List(l1), Packet::List(l2)) => l1.partial_cmp(&l2),
         }
     }
 }
