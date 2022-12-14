@@ -10,6 +10,23 @@ pub fn solve(input_file: String, part: u8) {
     rock_lines.push((Point { x: 501, y: 0 }, Point { x: 501, y: 0 }));
 
     let (top_left, bottom_right) = bounding_coordinates(&rock_lines);
+    if part == 2 {
+        dbg!(bottom_right);
+        // let's add a "infinite" line at the bottom
+        let shift = bottom_right.y + 2;
+        rock_lines.push((
+            Point {
+                x: top_left.x - shift,
+                y: bottom_right.y + 2,
+            },
+            Point {
+                x: bottom_right.x + shift,
+                y: bottom_right.y + 2,
+            },
+        ));
+    }
+    let (top_left, bottom_right) = bounding_coordinates(&rock_lines);
+
     // shifting coordinates
     let rock_lines = rock_lines.iter().map(|(p1, p2)| {
         let p1 = Point {
@@ -36,6 +53,7 @@ pub fn solve(input_file: String, part: u8) {
         }
     }
     cave[starting_sand_point.y][starting_sand_point.x] = Item::StartingSandPoint;
+
     let mut sand_unit_count = 1;
     loop {
         let sand_point = Point {
@@ -44,7 +62,13 @@ pub fn solve(input_file: String, part: u8) {
         // now this sand will fall as low as possible
         match fall(sand_point, &cave) {
             None => break,
-            Some(still_point) => cave[still_point.y][still_point.x] = Item::Sand,
+            Some(still_point) => {
+                if matches!(cave[still_point.y][still_point.x], Item::StartingSandPoint) {
+                    sand_unit_count += 1;
+                    break;
+                }
+                cave[still_point.y][still_point.x] = Item::Sand
+            }
         }
         sand_unit_count += 1;
     }
