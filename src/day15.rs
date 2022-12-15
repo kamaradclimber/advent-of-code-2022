@@ -40,10 +40,10 @@ pub fn solve(input_file: String, part: u8) {
         }
         println!("There are {0} points on line {considered_line}", marked_points.len());
     } else {
-        let rangey = 0..=400000;
+        let rangey = 0..=4000000;
         let rangex = 0..=4000000;
         for y in rangey {
-            if y % 4000 == 0 {
+            if y % 40000 == 0 {
               println!("Considering line {y}");
             }
             for p in free_positions(y, &rangex, &readings) {
@@ -60,15 +60,10 @@ fn free_positions(y: i32, x_range: &std::ops::RangeInclusive<i32>, readings: &Ha
         let current = Point { x, y };
 
         // FIXME: maybe we could sort sensors from right to left to maximize our jump size 🤯
-        let within_reach = readings.iter().filter(|(sensor, beacon)| current.distance(sensor) <= sensor.distance(beacon));
-        let mut w = vec![];
-        for (sensor, _) in within_reach {
-            w.push(sensor);
-        }
-        w.sort_by(|s1,s2| s2.x.cmp(&s1.x));
-        match w.get(0) {
+        let within_reach = readings.iter().filter(|(sensor, beacon)| current.distance(sensor) <= sensor.distance(beacon)).next();
+        match within_reach {
             None => free_pos.push(current),
-            Some(sensor) => {
+            Some((sensor, beacon)) => {
                 // then we know current point cannot be the missing beacon
                 // we also know we can progress on the line quite a while
                 if x < sensor.x {
@@ -76,7 +71,6 @@ fn free_positions(y: i32, x_range: &std::ops::RangeInclusive<i32>, readings: &Ha
                     x += 2 * (sensor.x - x);
                 } else {
                     // println!("{0} sensors were in reach of this point ({current:?}). Example: {1:?}", w.len(), w.get(0).unwrap());
-                    let beacon = readings.get(*sensor).unwrap();
                     x += (sensor.distance(beacon) - current.distance(sensor)) as i32;
                 }
             }
