@@ -46,15 +46,19 @@ pub fn solve(input_file: String, part: u8) {
             if y % 40000 == 0 {
               println!("Considering line {y}");
             }
-            for p in free_positions(y, &rangex, &readings) {
-                println!("{p:?} is free");
+            match free_position(y, &rangex, &readings) {
+                None => (),
+                Some(signal) => {
+                    let tuning_frequency = signal.x as i64 * 4000000 + signal.y as i64;
+                    println!("Signal tuning frequency is {0:?}", tuning_frequency);
+                    break
+                },
             }
         }
     }
 }
 
-fn free_positions(y: i32, x_range: &std::ops::RangeInclusive<i32>, readings: &HashMap<Point,Point>) -> Vec<Point> {
-    let mut free_pos = vec![];
+fn free_position(y: i32, x_range: &std::ops::RangeInclusive<i32>, readings: &HashMap<Point,Point>) -> Option<Point> {
     let mut x = *x_range.start();
     while x <= *x_range.end() {
         let current = Point { x, y };
@@ -62,7 +66,7 @@ fn free_positions(y: i32, x_range: &std::ops::RangeInclusive<i32>, readings: &Ha
         // FIXME: maybe we could sort sensors from right to left to maximize our jump size 🤯
         let within_reach = readings.iter().filter(|(sensor, beacon)| current.distance(sensor) <= sensor.distance(beacon)).next();
         match within_reach {
-            None => free_pos.push(current),
+            None => return Some(current),
             Some((sensor, beacon)) => {
                 // then we know current point cannot be the missing beacon
                 // we also know we can progress on the line quite a while
@@ -77,7 +81,7 @@ fn free_positions(y: i32, x_range: &std::ops::RangeInclusive<i32>, readings: &Ha
         }
         x += 1;
     }
-    free_pos
+    None
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
