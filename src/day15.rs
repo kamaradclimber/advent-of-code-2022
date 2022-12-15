@@ -25,16 +25,15 @@ pub fn solve(input_file: String, part: u8) {
             x: *beacon_x,
             y: *beacon_y,
         };
-        readings.insert(sensor, beacon);
-        sensor.distance(&beacon);
+        readings.insert(sensor, (beacon, sensor.distance(&beacon)));
     }
 
     if part == 1 {
+        // this part could greatly optimized by using the same technique than part2
         let mut marked_points = HashSet::new();
-        for (sensor, beacon) in &readings {
-            let d = sensor.distance(&beacon);
+        for (sensor, (beacon, distance)) in &readings {
             let impossible_positions = sensor
-                .points_within_in_line(d, considered_line)
+                .points_within_in_line(*distance, considered_line)
                 .into_iter()
                 .filter(|p| p.y == considered_line)
                 .filter(|p| p != beacon);
@@ -68,7 +67,7 @@ pub fn solve(input_file: String, part: u8) {
 fn free_position(
     y: i32,
     x_range: &std::ops::RangeInclusive<i32>,
-    readings: &HashMap<Point, Point>,
+    readings: &HashMap<Point, (Point, u32)>,
 ) -> Option<Point> {
     let mut x = *x_range.start();
     while x <= *x_range.end() {
@@ -77,17 +76,17 @@ fn free_position(
         // FIXME: maybe we could sort sensors from right to left to maximize our jump size 🤯
         let within_reach = readings
             .iter()
-            .filter(|(sensor, beacon)| current.distance(sensor) <= sensor.distance(beacon))
+            .filter(|(sensor, (_, distance))| current.distance(sensor) <= *distance)
             .next();
         match within_reach {
             None => return Some(current),
-            Some((sensor, beacon)) => {
+            Some((sensor, (_, distance))) => {
                 // then we know current point cannot be the missing beacon
                 // we also know we can progress on the line quite a while
                 if x < sensor.x {
                     x += 2 * (sensor.x - x);
                 } else {
-                    x += (sensor.distance(beacon) - current.distance(sensor)) as i32;
+                    x += (*distance - current.distance(sensor)) as i32;
                 }
             }
         }
