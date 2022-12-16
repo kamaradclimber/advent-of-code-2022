@@ -68,6 +68,19 @@ impl Visited {
     }
 }
 
+#[derive(Clone, Debug)]
+enum Path<'a> {
+    Empty,
+    NonEmpty(ValveId, &'a Path<'a>)
+}
+
+fn all_paths(distances: &Vec<Vec<Option<u32>>>, time_budget: u32, start_point: ValveId) -> Vec<Path> {
+    let _all_paths = |time_budget: u32, visited: Visited, current_point: ValveId, path: Path| {
+        todo!()
+    };
+    _all_paths(30, Visited { state: 0 }, start_point, Path::Empty)
+}
+
 fn build_distances(tunnels: &Vec<Vec<ValveId>>) -> Vec<Vec<Option<u32>>> {
     let mut known_distances = vec![vec![None; tunnels.len()]; tunnels.len()];
     for start in 0..tunnels.len() {
@@ -91,39 +104,6 @@ fn build_distances(tunnels: &Vec<Vec<ValveId>>) -> Vec<Vec<Option<u32>>> {
         }
     }
     known_distances
-}
-
-fn dfs_compute(current_id: ValveId, total_flow_released_so_far: u32, flow_releasing_so_far: u32 ,remaining_time: u32, simpler_distance: &Vec<Vec<Option<u32>>>, simpler_flow_rates: &Vec<u32>, activated_already: Visited) -> u32 {
-    if remaining_time == 0 {
-        return total_flow_released_so_far;
-    }
-    let base : u32 = 2;
-    let all_visited = Visited { state: base.pow(simpler_flow_rates.len() as u32) - 1 };
-    if activated_already == all_visited {
-        return total_flow_released_so_far;
-    }
-    let mut max_total_flow = 0;
-    for (dest_id, opt_time) in simpler_distance[current_id].iter().enumerate() {
-        match opt_time {
-            None => continue,
-            Some(time) if time > &remaining_time => continue,
-            Some(time) => {
-                let total_flow_released_so_far = total_flow_released_so_far + flow_releasing_so_far;
-                let (time_spent, flow_releasing_so_far, activated_already) = if activated_already.is_activated(dest_id) || time + 1 > remaining_time{
-                    println!("Just visiting {dest_id}, releasing {flow_releasing_so_far}");
-                    (*time, flow_releasing_so_far, activated_already)
-                } else {
-                    println!("Activating {dest_id}, releasing {flow_releasing_so_far}/min. {activated_already:?}");
-                    let new_flow = flow_releasing_so_far + simpler_flow_rates[dest_id];
-                    (time+1, new_flow, activated_already.visit(dest_id))
-                };
-                println!("Remaining time {0}", remaining_time - time_spent);
-                let res = dfs_compute(dest_id, total_flow_released_so_far, flow_releasing_so_far, remaining_time - time_spent, simpler_distance, simpler_flow_rates, activated_already);
-                max_total_flow = std::cmp::max(max_total_flow, res);
-            }
-        }
-    }
-    return total_flow_released_so_far;
 }
 
 fn maximum_flow_released(start_id: ValveId, valve_flow_rates: &Vec<u32>, tunnels: &Vec<Vec<ValveId>>) -> u32 {
@@ -159,6 +139,19 @@ fn maximum_flow_released(start_id: ValveId, valve_flow_rates: &Vec<u32>, tunnels
     dbg!(&simpler_flow_rates);
 
     println!("Find better path");
-    dfs_compute(start_id, 0, 0, 30, &simpler_distances, &simpler_flow_rates, Visited { state: 0 })
+    let mut max = 0;
+    for path in all_paths(&simpler_distances, 30, start_id) {
+        max = std::cmp::max(compute_total_pressure(&path, &simpler_distances, start_id, &simpler_flow_rates).0, max);
+    }
+    max
 }
 
+fn compute_total_pressure(path: &Path, distances: &Vec<Vec<Option<u32>>>, current_pos: ValveId, valve_flows: &Vec<u32>) -> (u32, u32, Visited) { // (total_pressure, current_time, already activated)
+    match path {
+        Path::Empty => (0, 0, Visited { state: 0 }),
+        Path::NonEmpty(dest, tail) => {
+            let (total_pressure, current_time, activated) = compute_total_pressure(tail, distances, *dest, valve_flows);
+            todo!()
+        }
+    }
+}
