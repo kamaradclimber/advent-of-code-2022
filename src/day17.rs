@@ -165,19 +165,25 @@ impl World {
         }
     }
     fn land(&mut self, rock: ShapeObject) {
-        // sediment a shape and return the new world
+        // sediment a rock
         for p in rock.coordinates() {
             self.columns[p.column][p.height] = true;
         }
         for column in 0..COLUMN_COUNT {
-            // TODO: we can do better because we know the max piece size and the previous height
-            let mut height = 0;
-            for (h, &b) in self.columns[column].iter().enumerate() {
-                if b {
-                    height = h;
-                }
-            }
-            self.column_heights[column] = height + 1;
+            let lower_bound = if self.column_heights[column] >= 1 {
+                self.column_heights[column] - 1
+            } else {
+                0
+            };
+            let relevant_range = lower_bound..(self.max_height() + 5);
+            let relevant_array = &self.columns[column][relevant_range];
+            let (h, _) = relevant_array
+                .iter()
+                .enumerate()
+                .filter(|(_, &b)| b)
+                .max()
+                .unwrap_or((0, &false));
+            self.column_heights[column] = h + lower_bound + 1;
         }
     }
 
