@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 
 pub fn solve(input_file: String, part: u8) {
@@ -17,16 +18,54 @@ pub fn solve(input_file: String, part: u8) {
         Shape::Square,
     ];
 
+    println!(
+        "There are {0} shapes and a {1}-length cycle of jet",
+        shapes.len(),
+        gas_directions.len()
+    );
+    let cycle_length = shapes.len() * gas_directions.len();
+
     let mut w = World::default();
     let mut time = 0;
 
-    for object_id in 0..2022 {
+    let rock_count = if part == 1 { 2022 } else { 1000000000000 };
+    let mut state_signature = HashMap::<StateSignature, (usize, usize)>::new();
+
+    let mut object_id = 0;
+    let mut squeezed_height = 0;
+    while object_id < rock_count {
+        if object_id % 1000 == 0 {
+            println!("{object_id}th rock falling");
+        }
+        let signature = StateSignature {
+            top_signature: w.top_signature(),
+            shape_index: object_id % shapes.len(),
+            gas_jet_index: object_id % gas_directions.len(),
+        };
+        match state_signature.get(&signature) {
+            None => {
+                state_signature.insert(signature, (object_id, w.max_height()));
+            }
+            Some((cycle_start, height)) => {
+                let cycle = object_id - cycle_start;
+                let remaining_cycles = (rock_count - object_id) / cycle;
+                if remaining_cycles > 0 {
+                    println!("We found a cycle at iteration {object_id}");
+                    println!("There is a cycle of size {cycle}, let's skip a few iterations");
+                    let jump = remaining_cycles * cycle + object_id;
+                    squeezed_height = (w.max_height() - height) * remaining_cycles;
+                    println!("Will jump directly to iteration {jump}");
+                    object_id = jump;
+                }
+            }
+        }
         let shape = shapes[object_id % shapes.len()];
         let mut s = ShapeObject {
             shape,
             bottom_left_edge: w.spawn_point(),
         };
         loop {
+            // print_world(w, Some(s));
             let jet = gas_directions[time % gas_directions.len()];
             s = s.gas_jet(jet, w);
             let attempt_position = s.move_down();
@@ -40,8 +79,10 @@ pub fn solve(input_file: String, part: u8) {
             time += 1;
         }
         // print_world(w, None);
+        //dbg!(w.max_height());
+        object_id += 1;
     }
-    dbg!(w.max_height());
+    dbg!(w.max_height() + squeezed_height);
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -54,7 +95,7 @@ enum Shape {
 }
 
 const COLUMN_COUNT: usize = 7;
-const MAX_HEIGHT: usize = 2022 * 4 + 10;
+const MAX_HEIGHT: usize = 7 * 10091 * 4 + 10;
 
 #[derive(Debug, Clone, Copy)]
 struct World {
@@ -85,6 +126,13 @@ fn print_world(world: World, object: Option<ShapeObject>) {
     println!("+-------+");
 }
 
+#[derive(Debug, PartialEq, Eq, Hash)]
+struct StateSignature {
+    top_signature: [usize; COLUMN_COUNT],
+    shape_index: usize,
+    gas_jet_index: usize,
+}
+
 impl World {
     fn default() -> World {
         World {
@@ -93,19 +141,18 @@ impl World {
         }
     }
 
-    fn fillness(self) -> u32 {
-        let h = self.max_height() - 1;
-        let mut count = 0;
+    fn top_signature(self) -> [usize; COLUMN_COUNT] {
+        let h = self.max_height();
+        let mut signature = [0; COLUMN_COUNT];
         for column in 0..COLUMN_COUNT {
-            if self.columns[column][h] {
-                count += 1;
-            }
+            signature[column] = h - self.column_heights[column];
         }
-        count
+        signature
     }
 
     fn max_height(self) -> usize {
-        *self.column_heights
+        *self
+            .column_heights
             .iter()
             .max()
             .expect("World has at least one column")
