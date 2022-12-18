@@ -59,16 +59,8 @@ pub fn solve(input_file: String, part: u8) {
         }
     }
     if part == 1 {
-        let a = [
-            visibles_from_lower,
-            visibles_from_left,
-            visibles_from_right,
-            visibles_from_upper,
-        ]
-        .concat();
-        let visibles = a.iter().fold(HashSet::new(), |total, el| {
-            total.union(el).cloned().collect()
-        });
+        let a = [visibles_from_lower, visibles_from_left, visibles_from_right, visibles_from_upper].concat();
+        let visibles = a.iter().fold(HashSet::new(), |total, el| total.union(el).cloned().collect());
 
         println!("Visible trees for part {0}, is {1}", part, visibles.len());
     } else {

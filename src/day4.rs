@@ -1,20 +1,11 @@
 use regex::Regex;
 use std::fs;
 
-fn includes_range(
-    me: &std::ops::RangeInclusive<&u32>,
-    other: &std::ops::RangeInclusive<&u32>,
-) -> bool {
+fn includes_range(me: &std::ops::RangeInclusive<&u32>, other: &std::ops::RangeInclusive<&u32>) -> bool {
     me.start() <= other.start() && me.end() >= other.end()
 }
-fn overlap_range(
-    me: &std::ops::RangeInclusive<&u32>,
-    other: &std::ops::RangeInclusive<&u32>,
-) -> bool {
-    other.contains(&me.start())
-        || other.contains(&me.end())
-        || me.contains(&other.start())
-        || me.contains(&other.end())
+fn overlap_range(me: &std::ops::RangeInclusive<&u32>, other: &std::ops::RangeInclusive<&u32>) -> bool {
+    other.contains(&me.start()) || other.contains(&me.end()) || me.contains(&other.start()) || me.contains(&other.end())
 }
 
 pub fn solve(input_file: String, part: u8) {

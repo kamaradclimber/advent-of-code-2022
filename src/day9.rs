@@ -87,22 +87,10 @@ impl std::ops::Add<Move> for Position {
 
     fn add(self, movement: Move) -> Position {
         match movement {
-            Move::R => Position {
-                x: self.x + 1,
-                ..self
-            },
-            Move::L => Position {
-                x: self.x - 1,
-                ..self
-            },
-            Move::U => Position {
-                y: self.y - 1,
-                ..self
-            },
-            Move::D => Position {
-                y: self.y + 1,
-                ..self
-            },
+            Move::R => Position { x: self.x + 1, ..self },
+            Move::L => Position { x: self.x - 1, ..self },
+            Move::U => Position { y: self.y - 1, ..self },
+            Move::D => Position { y: self.y + 1, ..self },
         }
     }
 }

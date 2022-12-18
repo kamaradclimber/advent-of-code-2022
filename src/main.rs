@@ -28,14 +28,8 @@ pub mod day9;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let day = &args[1]
-        .trim()
-        .parse::<u8>()
-        .expect("Unable to read <day> as an integer");
-    let part = &args[2]
-        .trim()
-        .parse::<u8>()
-        .expect("Unable to read <part> as an integer");
+    let day = &args[1].trim().parse::<u8>().expect("Unable to read <day> as an integer");
+    let part = &args[2].trim().parse::<u8>().expect("Unable to read <part> as an integer");
     let input_file = &args[3];
     println!("Solving day {day}, part {part} with input file {input_file}");
 

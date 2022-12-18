@@ -17,10 +17,7 @@ pub fn solve(input_file: String, part: u8) {
         for (index, chunk) in packets.chunks(2).enumerate() {
             let (a, b) = if let [a, b] = chunk { (a, b) } else { panic!() };
             if a <= b {
-                println!(
-                    "pair {0}  {a:?} and {b:?} are in the right order",
-                    index + 1
-                );
+                println!("pair {0}  {a:?} and {b:?} are in the right order", index + 1);
                 result += index + 1;
             }
         }
@@ -114,9 +111,7 @@ fn read_litteral(s: &str) -> Option<u32> {
     if i == 0 {
         return None;
     }
-    let integer = s[0..i]
-        .parse()
-        .expect("We have checked it is a well formed integer");
+    let integer = s[0..i].parse().expect("We have checked it is a well formed integer");
     return Some(integer);
 }
 
@@ -128,10 +123,7 @@ impl std::str::FromStr for Packet {
         if s == "[]" {
             return Ok(Packet::List(vec![]));
         }
-        let next_char = s
-            .chars()
-            .next()
-            .expect("There should be at least one char left in the string");
+        let next_char = s.chars().next().expect("There should be at least one char left in the string");
         if next_char.is_digit(10) {
             return Ok(Packet::Integer(read_litteral(s).unwrap()));
         }
@@ -145,8 +137,7 @@ impl std::str::FromStr for Packet {
                         let next_entry = extract_one_entry(&s[cursor..s.len() - 1]);
                         cursor += next_entry.len();
 
-                        let subpacket =
-                            Packet::from_str(next_entry).expect("Sub packet must be well-formed");
+                        let subpacket = Packet::from_str(next_entry).expect("Sub packet must be well-formed");
                         items.push(subpacket);
                         if &s[cursor..=cursor] == "," {
                             cursor += 1;
@@ -229,11 +220,7 @@ mod tests {
 
         let s = "[139,[],42]";
         let p = Packet::from_str(&s).expect("Parsing should work");
-        let expectation = Packet::List(vec![
-            Packet::Integer(139),
-            Packet::List(vec![]),
-            Packet::Integer(42),
-        ]);
+        let expectation = Packet::List(vec![Packet::Integer(139), Packet::List(vec![]), Packet::Integer(42)]);
         assert_eq!(p, expectation);
     }
 

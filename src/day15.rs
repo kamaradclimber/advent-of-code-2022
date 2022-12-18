@@ -8,23 +8,15 @@ pub fn solve(input_file: String, part: u8) {
     println!("Considered line is **{considered_line}**");
     let lines = contents.lines();
     let mut readings = HashMap::new();
-    let re =
-        Regex::new(r"^Sensor at x=(-?\d+), y=(-?\d+): closest beacon is at x=(-?\d+), y=(-?\d+)$")
-            .unwrap();
+    let re = Regex::new(r"^Sensor at x=(-?\d+), y=(-?\d+): closest beacon is at x=(-?\d+), y=(-?\d+)$").unwrap();
     for line in lines {
         let cap = re.captures(line).unwrap();
         let sensor_x = &cap[1].parse::<i32>().unwrap();
         let sensor_y = &cap[2].parse::<i32>().unwrap();
         let beacon_x = &cap[3].parse::<i32>().unwrap();
         let beacon_y = &cap[4].parse::<i32>().unwrap();
-        let sensor = Sensor {
-            x: *sensor_x,
-            y: *sensor_y,
-        };
-        let beacon = Beacon {
-            x: *beacon_x,
-            y: *beacon_y,
-        };
+        let sensor = Sensor { x: *sensor_x, y: *sensor_y };
+        let beacon = Beacon { x: *beacon_x, y: *beacon_y };
         readings.insert(sensor, (beacon, sensor.distance(&beacon)));
     }
 
@@ -41,10 +33,7 @@ pub fn solve(input_file: String, part: u8) {
                 marked_points.insert(p);
             }
         }
-        println!(
-            "There are {0} points on line {considered_line}",
-            marked_points.len()
-        );
+        println!("There are {0} points on line {considered_line}", marked_points.len());
     } else {
         let rangey = 0..=4000000;
         let rangex = 0..=4000000;
@@ -64,20 +53,13 @@ pub fn solve(input_file: String, part: u8) {
     }
 }
 
-fn free_position(
-    y: i32,
-    x_range: &std::ops::RangeInclusive<i32>,
-    readings: &HashMap<Point, (Point, u32)>,
-) -> Option<Point> {
+fn free_position(y: i32, x_range: &std::ops::RangeInclusive<i32>, readings: &HashMap<Point, (Point, u32)>) -> Option<Point> {
     let mut x = *x_range.start();
     while x <= *x_range.end() {
         let current = Point { x, y };
 
         // FIXME: maybe we could sort sensors from right to left to maximize our jump size 🤯
-        let within_reach = readings
-            .iter()
-            .filter(|(sensor, (_, distance))| current.distance(sensor) <= *distance)
-            .next();
+        let within_reach = readings.iter().filter(|(sensor, (_, distance))| current.distance(sensor) <= *distance).next();
         match within_reach {
             None => return Some(current),
             Some((sensor, (_, distance))) => {

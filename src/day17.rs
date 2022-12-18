@@ -5,24 +5,11 @@ pub fn solve(input_file: String, part: u8) {
     let contents = fs::read_to_string(&input_file).expect("Could not read input_file");
     let first_line = contents.lines().next().unwrap();
 
-    let gas_directions: Vec<GasJetDirection> = first_line
-        .chars()
-        .map(|c| GasJetDirection::try_from(c).expect("Input has invalid characters"))
-        .collect();
+    let gas_directions: Vec<GasJetDirection> = first_line.chars().map(|c| GasJetDirection::try_from(c).expect("Input has invalid characters")).collect();
 
-    let shapes = [
-        Shape::Line,
-        Shape::Cross,
-        Shape::L,
-        Shape::Tower,
-        Shape::Square,
-    ];
+    let shapes = [Shape::Line, Shape::Cross, Shape::L, Shape::Tower, Shape::Square];
 
-    println!(
-        "There are {0} shapes and a {1}-length cycle of jet",
-        shapes.len(),
-        gas_directions.len()
-    );
+    println!("There are {0} shapes and a {1}-length cycle of jet", shapes.len(), gas_directions.len());
     let cycle_length = shapes.len() * gas_directions.len();
 
     let mut w = World::default();
@@ -105,11 +92,7 @@ struct World {
 
 fn print_world(world: World, object: Option<ShapeObject>) {
     let coords = object.map_or(vec![], ShapeObject::coordinates);
-    let height_start = world
-        .column_heights
-        .iter()
-        .max()
-        .expect("World has at least one column");
+    let height_start = world.column_heights.iter().max().expect("World has at least one column");
     for height in (0..height_start + 7).rev() {
         print!("|");
         for column in 0..COLUMN_COUNT {
@@ -151,11 +134,7 @@ impl World {
     }
 
     fn max_height(self) -> usize {
-        *self
-            .column_heights
-            .iter()
-            .max()
-            .expect("World has at least one column")
+        *self.column_heights.iter().max().expect("World has at least one column")
     }
     fn spawn_point(self) -> Point {
         let column = 2;
@@ -170,27 +149,16 @@ impl World {
             self.columns[p.column][p.height] = true;
         }
         for column in 0..COLUMN_COUNT {
-            let lower_bound = if self.column_heights[column] >= 1 {
-                self.column_heights[column] - 1
-            } else {
-                0
-            };
+            let lower_bound = if self.column_heights[column] >= 1 { self.column_heights[column] - 1 } else { 0 };
             let relevant_range = lower_bound..(self.max_height() + 5);
             let relevant_array = &self.columns[column][relevant_range];
-            let (h, _) = relevant_array
-                .iter()
-                .enumerate()
-                .filter(|(_, &b)| b)
-                .max()
-                .unwrap_or((0, &false));
+            let (h, _) = relevant_array.iter().enumerate().filter(|(_, &b)| b).max().unwrap_or((0, &false));
             self.column_heights[column] = h + lower_bound + 1;
         }
     }
 
     fn has_collision(self, rock: ShapeObject) -> bool {
-        rock.coordinates()
-            .iter()
-            .any(|p| self.columns[p.column][p.height])
+        rock.coordinates().iter().any(|p| self.columns[p.column][p.height])
     }
 }
 

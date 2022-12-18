@@ -56,9 +56,7 @@ pub fn solve(input_file: String, part: u8) {
 
     let mut sand_unit_count = 1;
     loop {
-        let sand_point = Point {
-            ..starting_sand_point
-        };
+        let sand_point = Point { ..starting_sand_point };
         // now this sand will fall as low as possible
         match fall(sand_point, &cave) {
             None => break,
@@ -178,28 +176,16 @@ fn bounding_coordinates(rock_lines: &Vec<(Point, Point)>) -> (Point, Point) {
     let mut bottom_right = first_point;
     for point in all_points {
         if point.x > bottom_right.x {
-            bottom_right = Point {
-                x: point.x,
-                ..bottom_right
-            };
+            bottom_right = Point { x: point.x, ..bottom_right };
         }
         if point.x < top_left.x {
-            top_left = Point {
-                x: point.x,
-                ..top_left
-            };
+            top_left = Point { x: point.x, ..top_left };
         }
         if point.y < top_left.y {
-            top_left = Point {
-                y: point.y,
-                ..top_left
-            };
+            top_left = Point { y: point.y, ..top_left };
         }
         if point.y > bottom_right.y {
-            bottom_right = Point {
-                y: point.y,
-                ..bottom_right
-            }
+            bottom_right = Point { y: point.y, ..bottom_right }
         }
     }
     // having a security margin will allow to manipulate Point at the edge of the map without
@@ -233,15 +219,7 @@ fn read_rock_lines(lines: std::str::Lines) -> Vec<(Point, Point)> {
 
 fn read_point(point: &str) -> Point {
     let mut xy_as_string = point.split(",");
-    let x = xy_as_string
-        .next()
-        .unwrap()
-        .parse()
-        .expect("x coordinate should contain a valid integer");
-    let y = xy_as_string
-        .next()
-        .unwrap()
-        .parse()
-        .expect("y coordinate should contain a valid integer");
+    let x = xy_as_string.next().unwrap().parse().expect("x coordinate should contain a valid integer");
+    let y = xy_as_string.next().unwrap().parse().expect("y coordinate should contain a valid integer");
     Point { x, y }
 }

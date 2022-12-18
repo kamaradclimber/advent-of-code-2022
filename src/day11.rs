@@ -10,15 +10,8 @@ pub fn solve(input_file: String, part: u8) {
         let monkey_lines: Vec<&str> = block.lines().collect();
         monkey_holdings.push(parse_item_line(&monkey_lines[1]));
         let operation = monkey_lines[2].trim().parse::<ItemOperation>().unwrap();
-        let test = monkey_lines[3..6]
-            .join("\n")
-            .parse::<ItemTestDestination>()
-            .unwrap();
-        let monkey = Monkey {
-            id,
-            operation,
-            test,
-        };
+        let test = monkey_lines[3..6].join("\n").parse::<ItemTestDestination>().unwrap();
+        let monkey = Monkey { id, operation, test };
         monkeys.push(monkey);
     }
     let mut inspected_items: Vec<u64> = vec![0; monkeys.len()];
@@ -35,11 +28,7 @@ pub fn solve(input_file: String, part: u8) {
             let mut new_holdings: Vec<Vec<Item>> = vec![vec![]; monkey_holdings.len()];
             for item in holdings {
                 inspected_items[monkey.id] += 1;
-                let new_item = if part == 1 {
-                    monkey.operation.run(*item) / 3
-                } else {
-                    Item(monkey.operation.run(*item) % ring)
-                };
+                let new_item = if part == 1 { monkey.operation.run(*item) / 3 } else { Item(monkey.operation.run(*item) % ring) };
                 let dest_id = if (new_item) % monkey.test.divide_criteria == 0 {
                     monkey.test.destination_if_true
                 } else {
@@ -50,10 +39,7 @@ pub fn solve(input_file: String, part: u8) {
             }
             monkey_holdings[monkey.id].clear();
             // TODO: find a way to avoid this intermediate structure to pass transferred items
-            for id in vec![
-                monkey.test.destination_if_true,
-                monkey.test.destination_if_false,
-            ] {
+            for id in vec![monkey.test.destination_if_true, monkey.test.destination_if_false] {
                 monkey_holdings[id].append(&mut new_holdings[id]);
             }
         }
@@ -73,11 +59,7 @@ pub fn solve(input_file: String, part: u8) {
     println!("Level of monkey business is {monkey_business_level}");
 }
 
-fn inspect_monkey_actions(
-    round: u64,
-    inspected_items: &Vec<u64>,
-    _monkey_holdings: &Vec<Vec<Item>>,
-) {
+fn inspect_monkey_actions(round: u64, inspected_items: &Vec<u64>, _monkey_holdings: &Vec<Vec<Item>>) {
     println!("== After round {round} ==");
     for (id, item_count) in inspected_items.iter().enumerate() {
         println!("Monkey {0} inspect items {1} times.", id, item_count);

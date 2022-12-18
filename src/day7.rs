@@ -137,8 +137,7 @@ impl FilesystemEntry {
         match self {
             FilesystemEntry::File(..) => panic!("Cannot add child on file"),
             FilesystemEntry::Directory(dir_name, children, _) => {
-                let error_message =
-                    format!("No child directory of {0} is named {1}", dir_name, name);
+                let error_message = format!("No child directory of {0} is named {1}", dir_name, name);
                 *children
                     .iter()
                     .filter(|&child_id| matches!(tree[*child_id], FilesystemEntry::Directory(..)))

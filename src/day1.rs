@@ -15,10 +15,7 @@ pub fn solve(input_file: String, top: u8) {
             if current_package_value == None {
                 packages.push(0);
             }
-            packages[elf_id] += line
-                .trim()
-                .parse::<u32>()
-                .expect("Would have expected a number but read {line}");
+            packages[elf_id] += line.trim().parse::<u32>().expect("Would have expected a number but read {line}");
         }
     }
     packages.sort();

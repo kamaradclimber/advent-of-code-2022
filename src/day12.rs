@@ -35,9 +35,7 @@ pub fn solve(input_file: String, part: u8) {
     let mut visited = HashSet::new();
 
     while to_explore.len() > 0 {
-        let (point, distance) = to_explore
-            .pop_front()
-            .expect("There is no path connecting S to E");
+        let (point, distance) = to_explore.pop_front().expect("There is no path connecting S to E");
         if point == stop {
             break;
         }
@@ -53,9 +51,7 @@ pub fn solve(input_file: String, part: u8) {
         }
         for n in neighbors(point, &maze) {
             let new_distance = distance + 1;
-            let better_distance = distances
-                .get(&n)
-                .map_or(true, |&old_distance| old_distance > new_distance);
+            let better_distance = distances.get(&n).map_or(true, |&old_distance| old_distance > new_distance);
             if better_distance {
                 distances.insert(n, new_distance);
                 to_explore.push_back((n, new_distance));
@@ -63,9 +59,7 @@ pub fn solve(input_file: String, part: u8) {
         }
     }
 
-    let distance = distances
-        .get(&stop)
-        .expect("We escaped the loop so we have found a path");
+    let distance = distances.get(&stop).expect("We escaped the loop so we have found a path");
     println!("Shortest distance from S to E is {distance}");
 }
 

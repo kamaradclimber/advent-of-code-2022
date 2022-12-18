@@ -7,9 +7,7 @@ pub fn solve(input_file: String, part: u8) {
     let lines = contents.lines();
     let mut droplets = HashSet::new();
     for line in lines {
-        let droplet: Point = line
-            .parse()
-            .expect("Input should be valid but this point cannot be parsed");
+        let droplet: Point = line.parse().expect("Input should be valid but this point cannot be parsed");
         droplets.insert(droplet);
     }
 
@@ -30,36 +28,12 @@ pub fn solve(input_file: String, part: u8) {
 
         // let mut ambiant_air = vec![];
         let mut exterior: HashSet<Point> = std::iter::empty()
-            .chain((min_y..=max_y).flat_map(|y| {
-                (min_z..=max_z)
-                    .clone()
-                    .map(move |z| Point { x: min_x, y, z })
-            }))
-            .chain((min_y..=max_y).flat_map(|y| {
-                (min_z..=max_z)
-                    .clone()
-                    .map(move |z| Point { x: max_x, y, z })
-            }))
-            .chain((min_x..=max_x).flat_map(|x| {
-                (min_z..=max_z)
-                    .clone()
-                    .map(move |z| Point { x, y: min_y, z })
-            }))
-            .chain((min_x..=max_x).flat_map(|x| {
-                (min_z..=max_z)
-                    .clone()
-                    .map(move |z| Point { x, y: max_y, z })
-            }))
-            .chain((min_x..=max_x).flat_map(|x| {
-                (min_y..=max_y)
-                    .clone()
-                    .map(move |y| Point { x, y, z: min_z })
-            }))
-            .chain((min_x..=max_x).flat_map(|x| {
-                (min_y..=max_y)
-                    .clone()
-                    .map(move |y| Point { x, y, z: max_z })
-            }))
+            .chain((min_y..=max_y).flat_map(|y| (min_z..=max_z).clone().map(move |z| Point { x: min_x, y, z })))
+            .chain((min_y..=max_y).flat_map(|y| (min_z..=max_z).clone().map(move |z| Point { x: max_x, y, z })))
+            .chain((min_x..=max_x).flat_map(|x| (min_z..=max_z).clone().map(move |z| Point { x, y: min_y, z })))
+            .chain((min_x..=max_x).flat_map(|x| (min_z..=max_z).clone().map(move |z| Point { x, y: max_y, z })))
+            .chain((min_x..=max_x).flat_map(|x| (min_y..=max_y).clone().map(move |y| Point { x, y, z: min_z })))
+            .chain((min_x..=max_x).flat_map(|x| (min_y..=max_y).clone().map(move |y| Point { x, y, z: max_z })))
             .filter(|p| !droplets.contains(&p))
             .collect();
 
@@ -86,10 +60,7 @@ pub fn solve(input_file: String, part: u8) {
             let neighbors = droplet.neighbors();
             exterior_surface_area += neighbors.iter().filter(|n| exterior.contains(&n)).count();
         }
-        println!(
-            "Number of cubes total within the area is {0}",
-            (max_x - min_x + 1) * (max_y - min_y + 1) * (max_z - min_z + 1)
-        );
+        println!("Number of cubes total within the area is {0}", (max_x - min_x + 1) * (max_y - min_y + 1) * (max_z - min_z + 1));
         println!("Number of droplets is {0}", droplets.len());
         println!("Number of cubes in the air is {0}", exterior.len());
         println!("Solution for {part} is {exterior_surface_area}");
@@ -104,47 +75,18 @@ struct Point {
 }
 
 impl Point {
-    fn within(
-        self,
-        x_range: RangeInclusive<i32>,
-        y_range: RangeInclusive<i32>,
-        z_range: RangeInclusive<i32>,
-    ) -> bool {
+    fn within(self, x_range: RangeInclusive<i32>, y_range: RangeInclusive<i32>, z_range: RangeInclusive<i32>) -> bool {
         x_range.contains(&self.x) && y_range.contains(&self.y) && z_range.contains(&self.z)
     }
 
     fn neighbors(self) -> Vec<Point> {
         let mut my_neighbors = vec![];
-        my_neighbors.push(Point {
-            x: self.x + 1,
-            y: self.y,
-            z: self.z,
-        });
-        my_neighbors.push(Point {
-            x: self.x - 1,
-            y: self.y,
-            z: self.z,
-        });
-        my_neighbors.push(Point {
-            x: self.x,
-            y: self.y + 1,
-            z: self.z,
-        });
-        my_neighbors.push(Point {
-            x: self.x,
-            y: self.y - 1,
-            z: self.z,
-        });
-        my_neighbors.push(Point {
-            x: self.x,
-            y: self.y,
-            z: self.z + 1,
-        });
-        my_neighbors.push(Point {
-            x: self.x,
-            y: self.y,
-            z: self.z - 1,
-        });
+        my_neighbors.push(Point { x: self.x + 1, y: self.y, z: self.z });
+        my_neighbors.push(Point { x: self.x - 1, y: self.y, z: self.z });
+        my_neighbors.push(Point { x: self.x, y: self.y + 1, z: self.z });
+        my_neighbors.push(Point { x: self.x, y: self.y - 1, z: self.z });
+        my_neighbors.push(Point { x: self.x, y: self.y, z: self.z + 1 });
+        my_neighbors.push(Point { x: self.x, y: self.y, z: self.z - 1 });
         my_neighbors
     }
 }

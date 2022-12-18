@@ -8,32 +8,21 @@ pub fn solve(input_file: String, part: u8) {
     for line in lines {
         let instruction: Instruction = line.parse().unwrap();
         match instruction {
-            Instruction::Noop => register_x_values.push(
-                *register_x_values
-                    .last()
-                    .expect("Register has always a value"),
-            ),
+            Instruction::Noop => register_x_values.push(*register_x_values.last().expect("Register has always a value")),
             Instruction::Addx(operand) => {
-                let last_value = *register_x_values
-                    .last()
-                    .expect("Register has always a value");
+                let last_value = *register_x_values.last().expect("Register has always a value");
                 register_x_values.push(last_value);
                 register_x_values.push(last_value + operand);
             }
         }
     }
     if part == 1 {
-        let res: i32 = snapshot_points
-            .iter()
-            .map(|&cycle| signal_strength(&register_x_values, cycle))
-            .sum();
+        let res: i32 = snapshot_points.iter().map(|&cycle| signal_strength(&register_x_values, cycle)).sum();
         println!("Sum of signal strength is {res}");
     } else {
         for cycle in 1..=240 {
             let pixel_position = (cycle as i32 - 1) % 40;
-            let c = if pixel_position >= register_x_values[cycle - 1] - 1
-                && pixel_position <= register_x_values[cycle - 1] + 1
-            {
+            let c = if pixel_position >= register_x_values[cycle - 1] - 1 && pixel_position <= register_x_values[cycle - 1] + 1 {
                 "#"
             } else {
                 "."
