@@ -10,7 +10,6 @@ pub fn solve(input_file: String, part: u8) {
     let shapes = [Shape::Line, Shape::Cross, Shape::L, Shape::Tower, Shape::Square];
 
     println!("There are {0} shapes and a {1}-length cycle of jet", shapes.len(), gas_directions.len());
-    let cycle_length = shapes.len() * gas_directions.len();
 
     let mut w = World::default();
     let mut time = 0;
@@ -90,7 +89,7 @@ struct World {
     column_heights: [usize; COLUMN_COUNT],
 }
 
-fn print_world(world: World, object: Option<ShapeObject>) {
+fn _print_world(world: World, object: Option<ShapeObject>) {
     let coords = object.map_or(vec![], ShapeObject::coordinates);
     let height_start = world.column_heights.iter().max().expect("World has at least one column");
     for height in (0..height_start + 7).rev() {

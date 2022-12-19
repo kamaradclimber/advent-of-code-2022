@@ -9,7 +9,6 @@ pub fn solve(input_file: String, part: u8) {
     let mut blueprints = vec![];
     let re = Regex::new(r"Each [^\.]+ costs [^\.]+\.").unwrap();
     for (idx, line) in lines.enumerate() {
-        println!("Line is {0}", &line);
         let mut blueprint = BluePrint { id: idx + 1, recipes: vec![] };
         for cap in re.captures_iter(line) {
             let recipe = cap[0].parse().unwrap();
@@ -17,22 +16,24 @@ pub fn solve(input_file: String, part: u8) {
             // optim 3: consider building geode robots first: no significant improvement
             // blueprint.recipes.sort_by(|r1, r2| r2.importance().cmp(&r1.importance()));
         }
-        dbg!(&blueprint);
         blueprints.push(blueprint);
     }
 
-    // toy a bit with blueprint 1
-    let b = &blueprints[0];
+    let max_time = if part == 1 { 24 } else { 32 };
+    let take = if part == 1 { 1000 } else { 3 };
 
     let mut quality_level = 0;
+    let mut product = 1;
 
     let mut tested_count = 0;
-    for b in blueprints {
-        let max_consumable_ore_per_minute = b.recipes.iter().map(|recipe| recipe.cost_in(&Resource::Ore)).max().expect("Every blueprint has a recipe consuming ore");
+    for b in blueprints.iter().take(take) {
+        let max_consumable_ore_per_minute = b.recipes.iter().map(|recipe| recipe.cost_in(&Resource::Ore)).max().expect("at least one recipe per blueprint");
+        let max_consumable_clay_per_minute = b.recipes.iter().map(|recipe| recipe.cost_in(&Resource::Clay)).max().expect("at least one recipe per blueprint");
+        let max_consumable_obsidian_per_minute = b.recipes.iter().map(|recipe| recipe.cost_in(&Resource::Obsidian)).max().expect("at least one recipe per blueprint");
 
         let mut already_tested = HashSet::new();
         let mut possible_futures = vec![]; // let's use a stack to explore with DFS to get a lower list
-        possible_futures.push(Stock::start());
+        possible_futures.push(Stock::start(max_time));
         let mut geode_max = 0;
         loop {
             // println!("Future to explore: {0}", possible_futures.len());
@@ -51,7 +52,7 @@ pub fn solve(input_file: String, part: u8) {
                         // println!("Cutting this branch because there is no time to build enough geodes");
                         continue;
                     }
-                    if possible_future.minute >= 24 {
+                    if possible_future.minute >= max_time {
                         if possible_future.geode > geode_max {
                             geode_max = possible_future.geode;
                             // println!("Found a path with a better geocode count: {0}", geode_max);
@@ -63,18 +64,28 @@ pub fn solve(input_file: String, part: u8) {
                             // optim 4: dump resources we can't use. It will helping with caching.
                             // Doing this for ore only, divides by 4 time to run the demo and by 9
                             // the real input
-                            let o = o.trim(max_consumable_ore_per_minute * (24 - o.minute));
+                            let remaining_time = max_time - o.minute;
+                            let o = o.trim(
+                                max_consumable_ore_per_minute * remaining_time,
+                                max_consumable_clay_per_minute * remaining_time,
+                                max_consumable_obsidian_per_minute * remaining_time,
+                            );
                             possible_futures.push(o);
                         }
                     }
                 }
             }
         }
-        println!("Best geobuilt for {0}: {geode_max}", b.id);
+        // println!("Best geobuilt for {0}: {geode_max}", b.id);
         quality_level += (b.id as u32) * geode_max;
+        product = product * geode_max;
     }
     println!("DEBUG: We tested {tested_count} situation total");
-    println!("Total quality level is {quality_level}");
+    if part == 1 {
+        println!("Total quality level is {quality_level}");
+    } else {
+        println!("Product is {product}");
+    }
 }
 
 struct BluePrint {
@@ -142,10 +153,11 @@ struct Stock {
     clay_robots: u32,
     obsidian_robots: u32,
     geode_robots: u32,
+    max_time: u32,
 }
 
 impl Stock {
-    fn start() -> Stock {
+    fn start(max_time: u32) -> Stock {
         Stock {
             minute: 0,
             ore: 0,
@@ -156,6 +168,7 @@ impl Stock {
             clay_robots: 0,
             obsidian_robots: 0,
             geode_robots: 0,
+            max_time: max_time,
         }
     }
     fn amount_of(&self, resource: Resource) -> u32 {
@@ -219,7 +232,7 @@ impl Stock {
     }
 
     fn potential_geode_built(&self) -> u32 {
-        let remaining_time = 24 - self.minute;
+        let remaining_time = self.max_time - self.minute;
         let mut pot = self.geode;
         // best we can do is to build one robot per turn until the end
         for i in 0..remaining_time {
@@ -228,10 +241,12 @@ impl Stock {
         pot
     }
 
-    fn trim(&self, max_consumable_ore: u32) -> Stock {
+    fn trim(&self, max_consumable_ore: u32, max_consumable_clay: u32, max_consumable_obsidian: u32) -> Stock {
         // restrict to resources that can be consumed in the time
         Stock {
             ore: std::cmp::min(self.ore, max_consumable_ore),
+            clay: std::cmp::min(self.clay, max_consumable_clay),
+            obsidian: std::cmp::min(self.obsidian, max_consumable_obsidian),
             ..*self
         }
     }
