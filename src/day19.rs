@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::fs;
 use std::collections::HashSet;
+use std::fs;
 
 pub fn solve(input_file: String, part: u8) {
     let contents = fs::read_to_string(&input_file).expect("Could not read input_file");
@@ -14,6 +14,8 @@ pub fn solve(input_file: String, part: u8) {
         for cap in re.captures_iter(line) {
             let recipe = cap[0].parse().unwrap();
             blueprint.recipes.push(recipe);
+            // optim 3: consider building geode robots first: no significant improvement
+            // blueprint.recipes.sort_by(|r1, r2| r2.importance().cmp(&r1.importance()));
         }
         dbg!(&blueprint);
         blueprints.push(blueprint);
@@ -24,7 +26,10 @@ pub fn solve(input_file: String, part: u8) {
 
     let mut quality_level = 0;
 
+    let mut tested_count = 0;
     for b in blueprints {
+        let max_consumable_ore_per_minute = b.recipes.iter().map(|recipe| recipe.cost_in(&Resource::Ore)).max().expect("Every blueprint has a recipe consuming ore");
+
         let mut already_tested = HashSet::new();
         let mut possible_futures = vec![]; // let's use a stack to explore with DFS to get a lower list
         possible_futures.push(Stock::start());
@@ -53,7 +58,12 @@ pub fn solve(input_file: String, part: u8) {
                             // dbg!(possible_future);
                         }
                     } else {
+                        tested_count += 1;
                         for o in options(&possible_future, &b) {
+                            // optim 4: dump resources we can't use. It will helping with caching.
+                            // Doing this for ore only, divides by 4 time to run the demo and by 9
+                            // the real input
+                            let o = o.trim(max_consumable_ore_per_minute * (24 - o.minute));
                             possible_futures.push(o);
                         }
                     }
@@ -63,6 +73,7 @@ pub fn solve(input_file: String, part: u8) {
         println!("Best geobuilt for {0}: {geode_max}", b.id);
         quality_level += (b.id as u32) * geode_max;
     }
+    println!("DEBUG: We tested {tested_count} situation total");
     println!("Total quality level is {quality_level}");
 }
 
@@ -136,8 +147,15 @@ struct Stock {
 impl Stock {
     fn start() -> Stock {
         Stock {
-            minute: 0, ore: 0, clay: 0, obsidian: 0, geode: 0,
-            ore_robots: 1, clay_robots: 0, obsidian_robots: 0, geode_robots: 0
+            minute: 0,
+            ore: 0,
+            clay: 0,
+            obsidian: 0,
+            geode: 0,
+            ore_robots: 1,
+            clay_robots: 0,
+            obsidian_robots: 0,
+            geode_robots: 0,
         }
     }
     fn amount_of(&self, resource: Resource) -> u32 {
@@ -150,18 +168,33 @@ impl Stock {
 
     fn consume(self, resource: Resource, amount: u32) -> Stock {
         match resource {
-            Resource::Ore => Stock { ore: self.ore - amount, ..self},
-            Resource::Clay => Stock { clay: self.clay - amount, ..self},
-            Resource::Obsidian => Stock { obsidian: self.obsidian - amount, ..self },
+            Resource::Ore => Stock { ore: self.ore - amount, ..self },
+            Resource::Clay => Stock { clay: self.clay - amount, ..self },
+            Resource::Obsidian => Stock {
+                obsidian: self.obsidian - amount,
+                ..self
+            },
         }
     }
 
     fn gain(self, robot: Robot) -> Stock {
         match robot {
-            Robot::Ore => Stock { ore_robots: self.ore_robots+1, ..self },
-            Robot::Clay=> Stock { clay_robots: self.clay_robots+1, ..self },
-            Robot::Obsidian => Stock { obsidian_robots: self.obsidian_robots+1, ..self },
-            Robot::Geode => Stock { geode_robots: self.geode_robots+1, ..self },
+            Robot::Ore => Stock {
+                ore_robots: self.ore_robots + 1,
+                ..self
+            },
+            Robot::Clay => Stock {
+                clay_robots: self.clay_robots + 1,
+                ..self
+            },
+            Robot::Obsidian => Stock {
+                obsidian_robots: self.obsidian_robots + 1,
+                ..self
+            },
+            Robot::Geode => Stock {
+                geode_robots: self.geode_robots + 1,
+                ..self
+            },
         }
     }
 
@@ -176,12 +209,13 @@ impl Stock {
 
     fn tick(self) -> Stock {
         Stock {
-        minute: self.minute + 1,
-        ore: self.ore + self.ore_robots,
-        clay: self.clay + self.clay_robots,
-        obsidian: self.obsidian + self.obsidian_robots,
-        geode: self.geode + self.geode_robots,
-        ..self }
+            minute: self.minute + 1,
+            ore: self.ore + self.ore_robots,
+            clay: self.clay + self.clay_robots,
+            obsidian: self.obsidian + self.obsidian_robots,
+            geode: self.geode + self.geode_robots,
+            ..self
+        }
     }
 
     fn potential_geode_built(&self) -> u32 {
@@ -192,6 +226,14 @@ impl Stock {
             pot += self.geode_robots + i;
         }
         pot
+    }
+
+    fn trim(&self, max_consumable_ore: u32) -> Stock {
+        // restrict to resources that can be consumed in the time
+        Stock {
+            ore: std::cmp::min(self.ore, max_consumable_ore),
+            ..*self
+        }
     }
 }
 
@@ -217,6 +259,18 @@ impl Recipe {
         Recipe {
             resources: vec![],
             produce: Robot::Ore,
+        }
+    }
+
+    fn cost_in(&self, resource: &Resource) -> u32 {
+        self.resources.iter().filter(|&(r, _)| r == resource).map(|&(_, amount)| amount).next().unwrap_or(0)
+    }
+
+    fn importance(&self) -> u32 {
+        // the more important means we would like to do this recipe first
+        match self.produce {
+            Robot::Geode => 5,
+            _ => 1,
         }
     }
 
