@@ -1,6 +1,7 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::fs;
+use std::collections::HashSet;
 
 pub fn solve(input_file: String, part: u8) {
     let contents = fs::read_to_string(&input_file).expect("Could not read input_file");
@@ -17,6 +18,52 @@ pub fn solve(input_file: String, part: u8) {
         dbg!(&blueprint);
         blueprints.push(blueprint);
     }
+
+    // toy a bit with blueprint 1
+    let b = &blueprints[0];
+
+    let mut quality_level = 0;
+
+    for b in blueprints {
+        let mut already_tested = HashSet::new();
+        let mut possible_futures = vec![]; // let's use a stack to explore with DFS to get a lower list
+        possible_futures.push(Stock::start());
+        let mut geode_max = 0;
+        loop {
+            // println!("Future to explore: {0}", possible_futures.len());
+            match possible_futures.pop() {
+                None => break, // we are finished exploring all futures
+                Some(possible_future) => {
+                    //println!("We consider a future at time: {0}", possible_future.minute);
+                    // optim 1: no test to redo the same amount of work
+                    if already_tested.contains(&possible_future) {
+                        continue;
+                    } else {
+                        already_tested.insert(possible_future);
+                    }
+                    // optim 2: no need to get further: from 10s to 1s
+                    if possible_future.potential_geode_built() < geode_max {
+                        // println!("Cutting this branch because there is no time to build enough geodes");
+                        continue;
+                    }
+                    if possible_future.minute >= 24 {
+                        if possible_future.geode > geode_max {
+                            geode_max = possible_future.geode;
+                            // println!("Found a path with a better geocode count: {0}", geode_max);
+                            // dbg!(possible_future);
+                        }
+                    } else {
+                        for o in options(&possible_future, &b) {
+                            possible_futures.push(o);
+                        }
+                    }
+                }
+            }
+        }
+        println!("Best geobuilt for {0}: {geode_max}", b.id);
+        quality_level += (b.id as u32) * geode_max;
+    }
+    println!("Total quality level is {quality_level}");
 }
 
 struct BluePrint {
@@ -54,7 +101,7 @@ impl std::str::FromStr for Robot {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Resource {
     Ore,
     Clay,
@@ -72,10 +119,91 @@ impl std::str::FromStr for Resource {
     }
 }
 
-#[derive(Debug, Clone)]
+// let's have a way to represent our stock that is easy to copy
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct Stock {
-    resources: Vec<(Resource, u32)>,
-    robots: Vec<(Robot, u32)>,
+    minute: u32,
+    ore: u32,
+    clay: u32,
+    obsidian: u32,
+    geode: u32,
+    ore_robots: u32,
+    clay_robots: u32,
+    obsidian_robots: u32,
+    geode_robots: u32,
+}
+
+impl Stock {
+    fn start() -> Stock {
+        Stock {
+            minute: 0, ore: 0, clay: 0, obsidian: 0, geode: 0,
+            ore_robots: 1, clay_robots: 0, obsidian_robots: 0, geode_robots: 0
+        }
+    }
+    fn amount_of(&self, resource: Resource) -> u32 {
+        match resource {
+            Resource::Ore => self.ore,
+            Resource::Clay => self.clay,
+            Resource::Obsidian => self.obsidian,
+        }
+    }
+
+    fn consume(self, resource: Resource, amount: u32) -> Stock {
+        match resource {
+            Resource::Ore => Stock { ore: self.ore - amount, ..self},
+            Resource::Clay => Stock { clay: self.clay - amount, ..self},
+            Resource::Obsidian => Stock { obsidian: self.obsidian - amount, ..self },
+        }
+    }
+
+    fn gain(self, robot: Robot) -> Stock {
+        match robot {
+            Robot::Ore => Stock { ore_robots: self.ore_robots+1, ..self },
+            Robot::Clay=> Stock { clay_robots: self.clay_robots+1, ..self },
+            Robot::Obsidian => Stock { obsidian_robots: self.obsidian_robots+1, ..self },
+            Robot::Geode => Stock { geode_robots: self.geode_robots+1, ..self },
+        }
+    }
+
+    fn apply(&self, recipe: &Recipe) -> Stock {
+        // TODO: this is a good candidate to use fold/reduce/inject equivalent
+        let mut s = *self;
+        for &(r, a) in &recipe.resources {
+            s = s.consume(r, a);
+        }
+        s.gain(recipe.produce)
+    }
+
+    fn tick(self) -> Stock {
+        Stock {
+        minute: self.minute + 1,
+        ore: self.ore + self.ore_robots,
+        clay: self.clay + self.clay_robots,
+        obsidian: self.obsidian + self.obsidian_robots,
+        geode: self.geode + self.geode_robots,
+        ..self }
+    }
+
+    fn potential_geode_built(&self) -> u32 {
+        let remaining_time = 24 - self.minute;
+        let mut pot = self.geode;
+        // best we can do is to build one robot per turn until the end
+        for i in 0..remaining_time {
+            pot += self.geode_robots + i;
+        }
+        pot
+    }
+}
+
+fn options(stock: &Stock, blueprint: &BluePrint) -> Vec<Stock> {
+    let mut opts = vec![];
+    for recipe in &blueprint.recipes {
+        if recipe.available(stock) {
+            opts.push(stock.tick().apply(&recipe));
+        }
+    }
+    opts.push(stock.tick()); // we could also do nothing
+    opts
 }
 
 #[derive(Clone)]
@@ -90,6 +218,10 @@ impl Recipe {
             resources: vec![],
             produce: Robot::Ore,
         }
+    }
+
+    fn available(&self, stock: &Stock) -> bool {
+        self.resources.iter().all(|&(resource, amount)| stock.amount_of(resource) >= amount)
     }
 }
 
