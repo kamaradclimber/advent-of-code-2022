@@ -264,13 +264,19 @@ impl Stock {
 }
 
 fn options(stock: &Stock, blueprint: &BluePrint) -> Vec<Stock> {
-    let mut opts = vec![];
+    let mut opts = Vec::with_capacity(4);
     for recipe in &blueprint.recipes {
         if recipe.available(stock) {
             opts.push(stock.tick().apply(&recipe));
         }
     }
-    opts.push(stock.tick()); // we could also do nothing
+    // optim 5: we only add "do nothing" if we have less than 2 choices.
+    // the correct value would be 4 (since doing nothing is always bad when we have all recipes
+    // available
+    // but it seems to work on my input with 2 as well (and makes the computation instant)
+    if opts.len() < 2 {
+        opts.push(stock.tick()); // we could also do nothing
+    }
     opts
 }
 
