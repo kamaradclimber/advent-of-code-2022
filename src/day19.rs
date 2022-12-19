@@ -1,3 +1,4 @@
+use lazy_static::lazy_static;
 use regex::Regex;
 use std::fs;
 
@@ -5,9 +6,9 @@ pub fn solve(input_file: String, part: u8) {
     let contents = fs::read_to_string(&input_file).expect("Could not read input_file");
     let lines = contents.lines();
     let mut blueprints = vec![];
+    let re = Regex::new(r"Each [^\.]+ costs [^\.]+\.").unwrap();
     for (idx, line) in lines.enumerate() {
         println!("Line is {0}", &line);
-        let re = Regex::new(r"Each [^\.]+ costs [^\.]+\.").unwrap();
         let mut blueprint = BluePrint { id: idx + 1, recipes: vec![] };
         for cap in re.captures_iter(line) {
             let recipe = cap[0].parse().unwrap();
@@ -96,8 +97,10 @@ impl std::str::FromStr for Recipe {
     type Err = &'static str;
     fn from_str(recipe_str: &str) -> Result<Self, <Self as std::str::FromStr>::Err> {
         let mut recipe = Recipe::empty();
-        let re = Regex::new(r"(\d+) (\w+)").unwrap();
-        for cap in re.captures_iter(recipe_str) {
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"(\d+) (\w+)").unwrap();
+        }
+        for cap in RE.captures_iter(recipe_str) {
             let amount = cap[1].parse::<u32>().unwrap();
             let recipient = cap[2].parse()?;
             recipe.resources.push((recipient, amount));
