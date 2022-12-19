@@ -13,8 +13,6 @@ pub fn solve(input_file: String, part: u8) {
         for cap in re.captures_iter(line) {
             let recipe = cap[0].parse().unwrap();
             blueprint.recipes.push(recipe);
-            // optim 3: consider building geode robots first: no significant improvement
-            // blueprint.recipes.sort_by(|r1, r2| r2.importance().cmp(&r1.importance()));
         }
         blueprints.push(blueprint);
     }
@@ -26,6 +24,7 @@ pub fn solve(input_file: String, part: u8) {
     let mut product = 1;
 
     let mut tested_count = 0;
+
     for b in blueprints.iter().take(take) {
         let max_consumable_ore_per_minute = b.recipes.iter().map(|recipe| recipe.cost_in(&Resource::Ore)).max().expect("at least one recipe per blueprint");
         let max_consumable_clay_per_minute = b.recipes.iter().map(|recipe| recipe.cost_in(&Resource::Clay)).max().expect("at least one recipe per blueprint");
@@ -70,6 +69,18 @@ pub fn solve(input_file: String, part: u8) {
                                 max_consumable_clay_per_minute * remaining_time,
                                 max_consumable_obsidian_per_minute * remaining_time,
                             );
+                            // optim 5: avoid constructing more robots if we are already producing
+                            // enough to use in the most heavy recipe. This moves part 2 on real
+                            // input from 19s to 7.5s
+                            if possible_future.ore_robots + 1 == o.ore_robots && possible_future.ore_robots >= max_consumable_ore_per_minute {
+                                continue;
+                            }
+                            if possible_future.clay_robots + 1 == o.clay_robots && possible_future.clay_robots >= max_consumable_clay_per_minute {
+                                continue;
+                            }
+                            if possible_future.obsidian_robots + 1 == o.obsidian_robots && possible_future.obsidian_robots >= max_consumable_obsidian_per_minute {
+                                continue;
+                            }
                             possible_futures.push(o);
                         }
                     }
@@ -279,14 +290,6 @@ impl Recipe {
 
     fn cost_in(&self, resource: &Resource) -> u32 {
         self.resources.iter().filter(|&(r, _)| r == resource).map(|&(_, amount)| amount).next().unwrap_or(0)
-    }
-
-    fn importance(&self) -> u32 {
-        // the more important means we would like to do this recipe first
-        match self.produce {
-            Robot::Geode => 5,
-            _ => 1,
-        }
     }
 
     fn available(&self, stock: &Stock) -> bool {
