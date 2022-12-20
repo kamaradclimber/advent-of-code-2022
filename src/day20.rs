@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use std::fs;
 
 pub fn solve(input_file: String, part: u8) {
@@ -18,8 +17,6 @@ pub fn solve(input_file: String, part: u8) {
         array.push(n);
     }
 
-    let mut first_element_id = 0;
-    // print(&array, first_element_id);
     for _ in 0..mix_count {
         for i in 0..array.len() {
             let el = array[i];
@@ -27,48 +24,15 @@ pub fn solve(input_file: String, part: u8) {
             let count = el.shift.abs() as usize % (array.len() - 1);
             if el.shift > 0 {
                 for _ in 0..count {
-                    let el = array[i]; // its important we take the latest version of the element
-                    if el == array[first_element_id] {
-                        first_element_id = el.right_number_id;
-                    }
-                    let current_left = el.left_number_id;
-                    let current_right = el.right_number_id;
-                    let new_right = array[current_right].right_number_id;
-                    let (nl, nr) = array[current_left].bind(array[current_right]);
-                    array[nl.original_pos] = nl;
-                    array[nr.original_pos] = nr;
-                    let (ns, nr) = el.bind(array[new_right]);
-                    array[ns.original_pos] = ns;
-                    array[nr.original_pos] = nr;
-                    let (nl, ns) = array[current_right].bind(array[el.original_pos]);
-                    array[nl.original_pos] = nl;
-                    array[ns.original_pos] = ns;
-                    // print(&array, first_element_id);
+                    shift_left_once(&mut array, i);
                 }
             } else if el.shift < 0 {
                 for _ in 0..count {
-                    let el = array[i]; // its important we take the latest version of the element
-                    if el == array[first_element_id] {
-                        first_element_id = el.right_number_id;
-                    }
-                    let current_left = el.left_number_id;
-                    let current_right = el.right_number_id;
-                    let new_left = array[current_left].left_number_id;
-                    let (a, b) = array[new_left].bind(array[el.original_pos]);
-                    array[a.original_pos] = a;
-                    array[b.original_pos] = b;
-                    let (a, b) = array[el.original_pos].bind(array[current_left]);
-                    array[a.original_pos] = a;
-                    array[b.original_pos] = b;
-                    let (a, b) = array[current_left].bind(array[current_right]);
-                    array[a.original_pos] = a;
-                    array[b.original_pos] = b;
-                    // print(&array, first_element_id);
+                    shift_right_once(&mut array, i);
                 }
             } else {
                 // nothing to do
             }
-            // print(&array, first_element_id);
         }
     }
 
@@ -78,23 +42,29 @@ pub fn solve(input_file: String, part: u8) {
     for i in 1..=3000 {
         current_index = array[current_index].right_number_id;
         if i % 1000 == 0 {
-            dbg!(array[current_index].shift);
             sum += array[current_index].shift;
         }
     }
     println!("Response for part {part} is {sum}");
 }
+fn shift_right_once(array: &mut Vec<Number>, index: usize) {
+    let el = array[index]; // its important we take the latest version of the element
+    let current_left = el.left_number_id;
+    let current_right = el.right_number_id;
+    let new_left = array[current_left].left_number_id;
+    array[new_left].bind(array[el.original_pos], array);
+    array[el.original_pos].bind(array[current_left], array);
+    array[current_left].bind(array[current_right], array);
+}
 
-fn print(array: &Vec<Number>, first_item_id: usize) {
-    let mut cur = &array[array[first_item_id].right_number_id];
-    let mut a = vec![];
-    a.push(first_item_id);
-    while cur.original_pos != first_item_id {
-        a.push(cur.original_pos);
-        // println!("Next index is {0}", cur.right_number_id);
-        cur = &array[cur.right_number_id];
-    }
-    println!("{0}", a.iter().map(|&e| { format!("{0}", array[e].shift) }).join(", "));
+fn shift_left_once(array: &mut Vec<Number>, index: usize) {
+    let el = array[index]; // its important we take the latest version of the element
+    let current_left = el.left_number_id;
+    let current_right = el.right_number_id;
+    let new_right = array[current_right].right_number_id;
+    array[current_left].bind(array[current_right], array);
+    array[el.original_pos].bind(array[new_right], array);
+    array[current_right].bind(array[el.original_pos], array);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -105,7 +75,8 @@ struct Number {
     right_number_id: usize,
 }
 impl Number {
-    fn bind(self, other: Number) -> (Number, Number) {
+
+    fn bind(self, other: Number, array: &mut Vec<Number>) {
         let new_self = Number {
             right_number_id: other.original_pos,
             ..self
@@ -114,6 +85,7 @@ impl Number {
             left_number_id: self.original_pos,
             ..other
         };
-        (new_self, new_other)
+        array[new_self.original_pos] = new_self;
+        array[new_other.original_pos] = new_other;
     }
 }
