@@ -18,21 +18,19 @@ pub fn solve(input_file: String, part: u8) {
     }
 
     let mut first_element_id = 0;
-    print(&array, first_element_id);
+    // print(&array, first_element_id);
     for i in 0..array.len() {
         let el = array[i];
-        println!("===Move {0}", el.shift);
+        // println!("===Move {0} ({1}/{2})", el.shift, i+1, array.len());
         if el.shift > 0 {
-            if el == array[first_element_id] {
-                first_element_id = el.right_number_id;
-            }
             for _ in 0..el.shift {
                 let el = array[i]; // its important we take the latest version of the element
+                if el == array[first_element_id] {
+                    first_element_id = el.right_number_id;
+                }
                 let current_left = el.left_number_id;
                 let current_right = el.right_number_id;
                 let new_right = array[current_right].right_number_id;
-                println!("My old left is {0}", array[el.left_number_id].shift);
-                println!("My old right is {0}", array[el.right_number_id].shift);
                 let (nl, nr) = array[current_left].bind(array[current_right]);
                 array[nl.original_pos] = nl;
                 array[nr.original_pos] = nr;
@@ -42,17 +40,47 @@ pub fn solve(input_file: String, part: u8) {
                 let (nl, ns) = array[current_right].bind(array[el.original_pos]);
                 array[nl.original_pos] = nl;
                 array[ns.original_pos] = ns;
-                let new_el = array[el.original_pos];
-                println!("My new left is {0}", array[new_el.left_number_id].shift);
-                println!("My new right is {0}", array[new_el.right_number_id].shift);
-                print(&array, first_element_id);
+                // print(&array, first_element_id);
             }
         } else if el.shift < 0 {
-            todo!();
+            for _ in el.shift..0 {
+                let el = array[i]; // its important we take the latest version of the element
+                if array[el.left_number_id] == array[first_element_id] {
+                    // first_element_id = el.original_pos;
+                } else if el == array[first_element_id] {
+                    first_element_id = el.right_number_id;
+                }
+                let current_left = el.left_number_id;
+                let current_right = el.right_number_id;
+                let new_left = array[current_left].left_number_id;
+                let (a, b) = array[new_left].bind(array[el.original_pos]);
+                array[a.original_pos] = a;
+                array[b.original_pos] = b;
+                let (a, b) = array[el.original_pos].bind(array[current_left]);
+                array[a.original_pos] = a;
+                array[b.original_pos] = b;
+                let (a, b) = array[current_left].bind(array[current_right]);
+                array[a.original_pos] = a;
+                array[b.original_pos] = b;
+                // print(&array, first_element_id);
+            }
         } else {
             // nothing to do
         }
+        // print(&array, first_element_id);
     }
+
+    let index_of_0 = array.iter().enumerate().find(|&(_, number)| number.shift == 0).unwrap().0;
+    let mut sum = 0;
+    let mut current_index = index_of_0;
+    for i in 1..=3000 {
+        current_index = array[current_index].right_number_id;
+        if i % 1000 == 0 {
+            dbg!(array[current_index].shift);
+            sum += array[current_index].shift;
+        }
+    }
+    println!("Response for part {part} is {sum}");
 }
 
 fn print(array: &Vec<Number>, first_item_id: usize) {
@@ -65,7 +93,7 @@ fn print(array: &Vec<Number>, first_item_id: usize) {
         cur = &array[cur.right_number_id];
     }
     println!("{0}", a.iter().map(|&e| {
-        format!("{0}({1})" , array[e].shift, array[e].generation)
+        format!("{0}" , array[e].shift)
     }).join(", "));
 }
 
