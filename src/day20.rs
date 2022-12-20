@@ -6,10 +6,12 @@ pub fn solve(input_file: String, part: u8) {
     let lines = contents.lines();
     let mut array = vec![];
     let len = contents.lines().count();
+    let decryption_key = if part == 1 { 1 } else { 811589153 };
+    let mix_count = if part == 1 { 1 } else { 10 };
     for (index, line) in lines.enumerate() {
         let n = Number {
             original_pos: index,
-            shift: line.parse().unwrap(),
+            shift: line.parse::<isize>().unwrap() * decryption_key,
             left_number_id: if index > 0 { index - 1 } else { len - 1 },
             right_number_id: if index < len - 1 { index + 1 } else { 0 },
         };
@@ -18,53 +20,56 @@ pub fn solve(input_file: String, part: u8) {
 
     let mut first_element_id = 0;
     // print(&array, first_element_id);
-    for i in 0..array.len() {
-        let el = array[i];
-        // println!("===Move {0} ({1}/{2})", el.shift, i+1, array.len());
-        if el.shift > 0 {
-            for _ in 0..el.shift {
-                let el = array[i]; // its important we take the latest version of the element
-                if el == array[first_element_id] {
-                    first_element_id = el.right_number_id;
+    for _ in 0..mix_count {
+        for i in 0..array.len() {
+            let el = array[i];
+            // println!("===Move {0} ({1}/{2})", el.shift, i+1, array.len());
+            let count = el.shift.abs() as usize % (array.len() - 1);
+            if el.shift > 0 {
+                for _ in 0..count {
+                    let el = array[i]; // its important we take the latest version of the element
+                    if el == array[first_element_id] {
+                        first_element_id = el.right_number_id;
+                    }
+                    let current_left = el.left_number_id;
+                    let current_right = el.right_number_id;
+                    let new_right = array[current_right].right_number_id;
+                    let (nl, nr) = array[current_left].bind(array[current_right]);
+                    array[nl.original_pos] = nl;
+                    array[nr.original_pos] = nr;
+                    let (ns, nr) = el.bind(array[new_right]);
+                    array[ns.original_pos] = ns;
+                    array[nr.original_pos] = nr;
+                    let (nl, ns) = array[current_right].bind(array[el.original_pos]);
+                    array[nl.original_pos] = nl;
+                    array[ns.original_pos] = ns;
+                    // print(&array, first_element_id);
                 }
-                let current_left = el.left_number_id;
-                let current_right = el.right_number_id;
-                let new_right = array[current_right].right_number_id;
-                let (nl, nr) = array[current_left].bind(array[current_right]);
-                array[nl.original_pos] = nl;
-                array[nr.original_pos] = nr;
-                let (ns, nr) = el.bind(array[new_right]);
-                array[ns.original_pos] = ns;
-                array[nr.original_pos] = nr;
-                let (nl, ns) = array[current_right].bind(array[el.original_pos]);
-                array[nl.original_pos] = nl;
-                array[ns.original_pos] = ns;
-                // print(&array, first_element_id);
-            }
-        } else if el.shift < 0 {
-            for _ in el.shift..0 {
-                let el = array[i]; // its important we take the latest version of the element
-                if el == array[first_element_id] {
-                    first_element_id = el.right_number_id;
+            } else if el.shift < 0 {
+                for _ in 0..count {
+                    let el = array[i]; // its important we take the latest version of the element
+                    if el == array[first_element_id] {
+                        first_element_id = el.right_number_id;
+                    }
+                    let current_left = el.left_number_id;
+                    let current_right = el.right_number_id;
+                    let new_left = array[current_left].left_number_id;
+                    let (a, b) = array[new_left].bind(array[el.original_pos]);
+                    array[a.original_pos] = a;
+                    array[b.original_pos] = b;
+                    let (a, b) = array[el.original_pos].bind(array[current_left]);
+                    array[a.original_pos] = a;
+                    array[b.original_pos] = b;
+                    let (a, b) = array[current_left].bind(array[current_right]);
+                    array[a.original_pos] = a;
+                    array[b.original_pos] = b;
+                    // print(&array, first_element_id);
                 }
-                let current_left = el.left_number_id;
-                let current_right = el.right_number_id;
-                let new_left = array[current_left].left_number_id;
-                let (a, b) = array[new_left].bind(array[el.original_pos]);
-                array[a.original_pos] = a;
-                array[b.original_pos] = b;
-                let (a, b) = array[el.original_pos].bind(array[current_left]);
-                array[a.original_pos] = a;
-                array[b.original_pos] = b;
-                let (a, b) = array[current_left].bind(array[current_right]);
-                array[a.original_pos] = a;
-                array[b.original_pos] = b;
-                // print(&array, first_element_id);
+            } else {
+                // nothing to do
             }
-        } else {
-            // nothing to do
+            // print(&array, first_element_id);
         }
-        // print(&array, first_element_id);
     }
 
     let index_of_0 = array.iter().enumerate().find(|&(_, number)| number.shift == 0).unwrap().0;
