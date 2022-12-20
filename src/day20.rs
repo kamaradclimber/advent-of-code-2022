@@ -1,5 +1,5 @@
-use std::fs;
 use itertools::Itertools;
+use std::fs;
 
 pub fn solve(input_file: String, part: u8) {
     let contents = fs::read_to_string(&input_file).expect("Could not read input_file");
@@ -12,7 +12,6 @@ pub fn solve(input_file: String, part: u8) {
             shift: line.parse().unwrap(),
             left_number_id: if index > 0 { index - 1 } else { len - 1 },
             right_number_id: if index < len - 1 { index + 1 } else { 0 },
-            generation: 0,
         };
         array.push(n);
     }
@@ -45,9 +44,7 @@ pub fn solve(input_file: String, part: u8) {
         } else if el.shift < 0 {
             for _ in el.shift..0 {
                 let el = array[i]; // its important we take the latest version of the element
-                if array[el.left_number_id] == array[first_element_id] {
-                    // first_element_id = el.original_pos;
-                } else if el == array[first_element_id] {
+                if el == array[first_element_id] {
                     first_element_id = el.right_number_id;
                 }
                 let current_left = el.left_number_id;
@@ -92,9 +89,7 @@ fn print(array: &Vec<Number>, first_item_id: usize) {
         // println!("Next index is {0}", cur.right_number_id);
         cur = &array[cur.right_number_id];
     }
-    println!("{0}", a.iter().map(|&e| {
-        format!("{0}" , array[e].shift)
-    }).join(", "));
+    println!("{0}", a.iter().map(|&e| { format!("{0}", array[e].shift) }).join(", "));
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -103,13 +98,17 @@ struct Number {
     shift: isize,
     left_number_id: usize,
     right_number_id: usize,
-    generation: u32,
 }
 impl Number {
-
     fn bind(self, other: Number) -> (Number, Number) {
-        let new_self = Number { right_number_id: other.original_pos, generation: self.generation +1, ..self};
-        let new_other = Number { left_number_id: self.original_pos, generation: other.generation+1, ..other};
+        let new_self = Number {
+            right_number_id: other.original_pos,
+            ..self
+        };
+        let new_other = Number {
+            left_number_id: self.original_pos,
+            ..other
+        };
         (new_self, new_other)
     }
 }
