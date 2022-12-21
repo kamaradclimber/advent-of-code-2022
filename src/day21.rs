@@ -85,8 +85,7 @@ pub fn solve(input_file: String, part: u8) {
                 }
             }
             if left_value < rov {
-                max_pow -= 1;
-                println!("Decreasing max_pow to {max_pow}");
+                max_pow = std::cmp::max(3, max_pow-1);
             }
 
             res += 1;
