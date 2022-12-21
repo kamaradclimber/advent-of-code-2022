@@ -75,7 +75,6 @@ struct Number {
     right_number_id: usize,
 }
 impl Number {
-
     fn bind(self, other: Number, array: &mut Vec<Number>) {
         let new_self = Number {
             right_number_id: other.original_pos,
