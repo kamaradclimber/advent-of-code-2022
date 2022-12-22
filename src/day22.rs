@@ -14,9 +14,8 @@ pub fn solve(input_file: String, part: u8) {
     // lets use 0-index entries during the program, we'll move to 1-index only at the end
 
     for (y, line) in input_lines.enumerate() {
-        let mut minx = 100000;
-        let mut maxx = 0;
-        println!("Line is {0}", &line);
+        let mut minx = 100000 as i32;
+        let mut maxx = 0 as i32;
         for (x, c) in line.chars().enumerate() {
             let tile = match c {
                 '#' => Some(Tile::Wall),
@@ -25,22 +24,22 @@ pub fn solve(input_file: String, part: u8) {
             };
             if let Some(t) = tile {
                 coords.insert((x as i32,y as i32), t);
-                minx = std::cmp::min(minx, x);
-                maxx = std::cmp::max(maxx, x);
+                minx = std::cmp::min(minx, x as i32);
+                maxx = std::cmp::max(maxx, x as i32);
             }
         }
         lines.push((minx,maxx));
     }
     let column_count = lines.iter().map(|(_,max)| max).max().unwrap() + 1;
     for x in 0..column_count {
-        let column_entries : Vec<i32> = coords.iter().filter(|(&(xx,yy), _)| xx == x as i32).map(|(&(_,yy),_)| yy).collect();
+        let column_entries : Vec<i32> = coords.iter().filter(|(&(xx,_), _)| xx == x as i32).map(|(&(_,yy),_)| yy).collect();
         columns.push((*column_entries.iter().min().unwrap(), *column_entries.iter().max().unwrap()));
     }
 
     let pattern = Regex::new(r"\d+|R|L").unwrap();
     let instructions = input_parts[1];
 
-    let mut cur = (0, lines[0].0 as i32);
+    let mut cur = (lines[0].0 as i32, 0);
     let mut cur_direction = Direction::Right;
 
     for instruction in pattern.captures_iter(instructions) {
@@ -56,7 +55,7 @@ pub fn solve(input_file: String, part: u8) {
             }
         }
     }
-    let password = (cur.1 as u32 + 1) * 1000 + (cur.0 as u32 + 1) * 25 + cur_direction.score();
+    let password = (cur.1 as u32 + 1) * 1000 + (cur.0 as u32 + 1) * 4 + cur_direction.score();
     println!("Password for part {part} is {password}");
 
 
@@ -73,15 +72,23 @@ fn move_one_step(pos: Point, direction: Direction, coords: &HashMap<Point, Tile>
     };
     match coords.get(&new_pos) {
         None => {
-            println!("Need to wrap");
             new_pos = match direction {
                 Direction::Up => (x, columns[x as usize].1),
                 Direction::Left => (lines[y as usize].1, y),
                 Direction::Down => (x, columns[x as usize].0),
                 Direction::Right => (lines[y as usize].0, y),
+            };
+            match coords.get(&new_pos) {
+                None => panic!("Wrapping should always put us in existing part of the board"),
+                Some(Tile::Wall) => {
+                    new_pos = pos;
+                },
+                _ => (), // all good
             }
         },
-        Some(Tile::Wall) => panic!("instructions should not push us into a wall"),
+        Some(Tile::Wall) => {
+            new_pos = pos;
+        },
         Some(Tile::Open) => (), // all good
     }
 
