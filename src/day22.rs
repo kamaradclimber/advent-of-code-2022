@@ -61,6 +61,16 @@ pub fn solve(input_file: String, part: u8) {
 
 }
 
+fn move_wrap(pos: Point, direction: Direction, lines: &Vec<(i32,i32)>, columns: &Vec<(i32,i32)>) -> Point {
+    let (x,y) = (pos.0 as i32, pos.1 as i32);
+    match direction {
+        Direction::Up => (x, columns[x as usize].1),
+        Direction::Left => (lines[y as usize].1, y),
+        Direction::Down => (x, columns[x as usize].0),
+        Direction::Right => (lines[y as usize].0, y),
+    }
+}
+
 fn move_one_step(pos: Point, direction: Direction, coords: &HashMap<Point, Tile>,
                  lines: &Vec<(i32,i32)>, columns: &Vec<(i32,i32)>) -> Point {
     let (x,y) = (pos.0 as i32, pos.1 as i32);
@@ -72,12 +82,7 @@ fn move_one_step(pos: Point, direction: Direction, coords: &HashMap<Point, Tile>
     };
     match coords.get(&new_pos) {
         None => {
-            new_pos = match direction {
-                Direction::Up => (x, columns[x as usize].1),
-                Direction::Left => (lines[y as usize].1, y),
-                Direction::Down => (x, columns[x as usize].0),
-                Direction::Right => (lines[y as usize].0, y),
-            };
+            new_pos = move_wrap(pos, direction, lines, columns);
             match coords.get(&new_pos) {
                 None => panic!("Wrapping should always put us in existing part of the board"),
                 Some(Tile::Wall) => {
