@@ -107,11 +107,14 @@ fn propose_positions(positions: &HashSet<Elf>, round_id: usize) -> HashMap<Elf, 
         }
     }
     let mut real_destinations = HashMap::new();
-    for (destination, elf_entries) in &proposed.iter().group_by(|(_elf, destination)| *destination) {
-        let elves : Vec<Elf> = elf_entries.map(|entry| *entry.0).collect();
+    let mut groups = HashMap::new();
+    for (elf, dest) in proposed.iter() {
+        groups.entry(*dest).and_modify(|l : &mut Vec<Elf>| l.push(*elf)).or_insert(vec![*elf]);
+    }
+    for (destination, elves) in groups {
         println!("Considering destination: {0:?} {1}", destination, elves.len());
         if elves.len() == 1 {
-            real_destinations.insert(elves[0], *destination);
+            real_destinations.insert(elves[0], destination);
         } else {
             for elf in elves {
                 println!("{0:?} wont move after all", elf);
