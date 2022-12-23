@@ -14,13 +14,27 @@ pub fn solve(input_file: String, part: u8) {
             }
         }
     }
-    for round_id in 0..10 {
-        positions = propose_positions(&positions, round_id % 4);
+    if part == 1 {
+        for round_id in 0..10 {
+            positions = propose_positions(&positions, round_id % 4);
+        }
+        let (minx,maxx) = positions.iter().map(|elf| elf.x).minmax().into_option().unwrap();
+        let (miny,maxy) = positions.iter().map(|elf| elf.y).minmax().into_option().unwrap();
+        let empty_tiles = (maxx-minx+1) * (maxy-miny+1) - positions.len() as i32;
+        println!("Solution for {part} is {empty_tiles}");
+    } else {
+        let mut round_id = 0;
+        loop {
+            let new_positions = propose_positions(&positions, round_id % 4);
+            if new_positions == positions {
+                break;
+            }
+            positions = new_positions;
+            round_id += 1;
+        }
+        round_id += 1; // round should be 1-indexed
+        println!("Solution for {part} is {round_id}");
     }
-    let (minx,maxx) = positions.iter().map(|elf| elf.x).minmax().into_option().unwrap();
-    let (miny,maxy) = positions.iter().map(|elf| elf.y).minmax().into_option().unwrap();
-    let empty_tiles = (maxx-minx+1) * (maxy-miny+1) - positions.len() as i32;
-    println!("Solution for {part} is {empty_tiles}");
 }
 
 
