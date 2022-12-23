@@ -59,7 +59,7 @@ pub fn solve(input_file: String, part: u8) {
     } else { // part 2
         let face_area = (coords.iter().len() / 6) as u32;
         let edge_size = (1..100).find(|i| i * i == face_area ).expect("We support cube of edge size 100 maximum");
-        let mappings = folding(edge_size, cur, cur_direction, &coords);
+        let _mappings = folding(edge_size, cur, cur_direction, &coords);
     }
     let password = (cur.1 as u32 + 1) * 1000 + (cur.0 as u32 + 1) * 4 + cur_direction.score();
     println!("Password for part {part} is {password}");
@@ -144,8 +144,6 @@ fn folding(edge_size: u32, initial_point: Point, initial_direction: Direction, c
             Some(LastTurnType::Left) => {
                 let (p1, dir1) = edge_stack.pop().unwrap();
                 let (p2, dir2) = edge_stack.pop().unwrap();
-                let mut pp1 = p1;
-                let mut pp2 = p2;
                 for step in 1..edge_size {
                     let a= next_pos(p1, dir1, step);
                     let b = next_pos(p2, dir2.left().left(), edge_size - step);
