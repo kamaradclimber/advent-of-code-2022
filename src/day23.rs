@@ -7,7 +7,6 @@ pub fn solve(input_file: String, part: u8) {
     let lines = contents.lines();
     let mut positions = HashSet::<Elf>::new();
     for (y, line) in lines.enumerate() {
-        println!("Line is {0}", &line);
         for (x, c) in line.chars().enumerate() {
             match c {
                 '#' => { positions.insert(Elf { x: x as i32, y: y as i32 }); },
@@ -16,9 +15,12 @@ pub fn solve(input_file: String, part: u8) {
         }
     }
     for round_id in 0..10 {
-        let proposed_positions = propose_positions(&positions, round_id % 4);
-        positions = effective_move(proposed_positions, &positions);
+        positions = propose_positions(&positions, round_id % 4);
     }
+    let (minx,maxx) = positions.iter().map(|elf| elf.x).minmax().into_option().unwrap();
+    let (miny,maxy) = positions.iter().map(|elf| elf.y).minmax().into_option().unwrap();
+    let empty_tiles = (maxx-minx+1) * (maxy-miny+1) - positions.len() as i32;
+    println!("Solution for {part} is {empty_tiles}");
 }
 
 
@@ -49,10 +51,9 @@ impl Elf {
     fn se(&self) -> Elf { Elf { x: self.x+1, y: self.y+1 } }
 }
 
-fn propose_positions(positions: &HashSet<Elf>, round_id: usize) -> HashMap<Elf, Elf> {
+fn propose_positions(positions: &HashSet<Elf>, round_id: usize) -> HashSet<Elf> {
     let mut proposed = HashMap::new();
     for &elf in positions {
-        println!("Considering {:?}", elf);
         if elf.neighbors().iter().any(|n| positions.contains(n)) {
             // we want to move
             for d in 0..4 {
@@ -60,7 +61,6 @@ fn propose_positions(positions: &HashSet<Elf>, round_id: usize) -> HashMap<Elf, 
                     0 => {
                         let looked_at = [elf.nw(), elf.n(), elf.ne()];
                         if looked_at.iter().all(|p| !positions.contains(p)) {
-                            println!("  -> Lets move north");
                             Some(elf.n())
                         } else {
                             None
@@ -69,7 +69,6 @@ fn propose_positions(positions: &HashSet<Elf>, round_id: usize) -> HashMap<Elf, 
                     1 => {
                         let looked_at = [elf.sw(), elf.s(), elf.se()];
                         if looked_at.iter().all(|p| !positions.contains(p)) {
-                            println!("  -> Lets move south");
                             Some(elf.s())
                         } else { 
                             None
@@ -78,7 +77,6 @@ fn propose_positions(positions: &HashSet<Elf>, round_id: usize) -> HashMap<Elf, 
                     2 => {
                         let looked_at = [elf.nw(), elf.w(), elf.sw()];
                         if looked_at.iter().all(|p| !positions.contains(p)) {
-                            println!("  -> Lets move west");
                             Some(elf.w())
                         } else {
                             None
@@ -87,7 +85,6 @@ fn propose_positions(positions: &HashSet<Elf>, round_id: usize) -> HashMap<Elf, 
                     3 => {
                         let looked_at = [elf.ne(), elf.e(), elf.se()];
                         if looked_at.iter().all(|p| !positions.contains(p)) {
-                            println!("  -> Lets move east");
                             Some(elf.e())
                         } else {
                             None
@@ -96,36 +93,32 @@ fn propose_positions(positions: &HashSet<Elf>, round_id: usize) -> HashMap<Elf, 
                     _ => panic!()
                 };
                 if let Some(destination) = proposition {
-                    println!("{0:?} proposed to move {1:?}", elf, destination);
                     proposed.insert(elf, destination);
                     break;
                 }
             }
+            if !proposed.contains_key(&elf) {
+                // cant move anywhere
+                proposed.insert(elf, elf);
+            }
         } else {
-            println!("{0:?} won't move", elf);
             proposed.insert(elf, elf);
         }
     }
-    let mut real_destinations = HashMap::new();
+    let mut real_destinations = HashSet::new();
     let mut groups = HashMap::new();
     for (elf, dest) in proposed.iter() {
         groups.entry(*dest).and_modify(|l : &mut Vec<Elf>| l.push(*elf)).or_insert(vec![*elf]);
     }
     for (destination, elves) in groups {
-        println!("Considering destination: {0:?} {1}", destination, elves.len());
         if elves.len() == 1 {
-            real_destinations.insert(elves[0], destination);
+            real_destinations.insert(destination);
         } else {
             for elf in elves {
-                println!("{0:?} wont move after all", elf);
-                real_destinations.insert(elf, elf);
+                real_destinations.insert(elf);
             }
         }
     }
     assert_eq!(real_destinations.len(), positions.len());
     real_destinations
-}
-
-fn effective_move(proposed_positions: HashMap<Elf,Elf>, positions: &HashSet<Elf>) -> HashSet<Elf> {
-    todo!();
 }
