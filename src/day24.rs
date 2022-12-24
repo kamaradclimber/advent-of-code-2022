@@ -42,32 +42,45 @@ pub fn solve(input_file: String, part: u8) {
     }
 
     // now let's do a DFS to explore the valley
-    let mut to_explore: Vec<(Time, Point)> = vec![];
-    to_explore.push((0, Point { x: 1, y: 0 }));
+    let mut to_explore: Vec<(Trip, Time, Point)> = vec![];
+    let valley_start = Point { x: 1, y: 0 };
+    to_explore.push((0, 0, valley_start));
     let mut best_time: Option<Time> = None;
     // vvvv This could be an optimization to gain some time but it is a bit cheating
-    // best_time = Some(500); // just some optim to avoid looking uselessly
+    best_time = Some(1500); // just some optim to avoid looking uselessly
     let valley_exit = Point { x: width - 2, y: height - 1 };
-    let mut already_explored = HashSet::<(Time, Point)>::new();
+    let mut already_explored = HashSet::<(Trip, Time, Point)>::new();
+
+    let mut objectives = vec![];
+    objectives.push(valley_exit);
+    if part == 2 {
+        objectives.push(valley_start);
+        objectives.push(valley_exit);
+    }
 
     while to_explore.len() > 0 {
-        let (time, current_pos) = to_explore.pop().expect("we just checked there was an element");
-        if current_pos == valley_exit {
-            best_time = match best_time {
-                None => Some(time),
-                Some(t) => Some(std::cmp::min(t, time)),
-            };
-            // println!("Best known time is {0}", best_time.unwrap());
-            continue;
+        let (mut trip, time, current_pos) = to_explore.pop().expect("we just checked there was an element");
+        let current_objective = objectives[trip];
+        if current_pos == current_objective {
+            if trip == objectives.len() - 1 {
+                best_time = match best_time {
+                    None => Some(time),
+                    Some(t) => Some(std::cmp::min(t, time)),
+                };
+                // println!("Best known time is {0}", best_time.unwrap());
+                continue;
+            } else {
+                trip += 1;
+            }
         }
-        if already_explored.contains(&(time, current_pos)) {
+        if already_explored.contains(&(trip, time, current_pos)) {
             continue;
         }
         if best_time.is_some() {
             if time >= best_time.unwrap() {
                 continue;
             }
-            let min_remaining_time = valley_exit.y - current_pos.y + valley_exit.x - current_pos.x;
+            let min_remaining_time = diff(current_objective.y, current_pos.y) + diff(current_objective.x, current_pos.x);
             if time + min_remaining_time >= best_time.unwrap() {
                 continue;
             }
@@ -80,13 +93,14 @@ pub fn solve(input_file: String, part: u8) {
         let future_valley_state = &valleys[time + 1];
         let possible_places = current_pos.neighbors(future_valley_state, height, width);
         for place in possible_places {
-            to_explore.push((time + 1, place));
+            to_explore.push((trip, time + 1, place));
         }
-        already_explored.insert((time, current_pos));
+        already_explored.insert((trip, time, current_pos));
     }
     println!("Best known time for {part} is {0}", best_time.unwrap());
 }
 
+type Trip = usize;
 type Time = usize;
 type ValleyState = HashMap<Point, Vec<Blizzard>>;
 
@@ -200,5 +214,13 @@ impl Point {
             }
         }
         my_res
+    }
+}
+
+fn diff(a: usize, b: usize) -> usize {
+    if a > b {
+        a - b
+    } else {
+        b - a
     }
 }
